@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../constants/api_constants.dart';
 
 class ApiClient {
@@ -9,15 +8,9 @@ class ApiClient {
   late final Dio _dio;
 
   ApiClient._internal() {
-    // On web (Chrome debug), route through a local CORS proxy to avoid
-    // browser preflight blocks. On mobile this is unused.
-    final baseUrl = kIsWeb
-        ? 'https://corsproxy.io/?url=${Uri.encodeComponent(ApiConstants.baseUrl)}'
-        : ApiConstants.baseUrl;
-
     _dio = Dio(
       BaseOptions(
-        baseUrl: baseUrl,
+        baseUrl: ApiConstants.baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         headers: {'Content-Type': 'application/json'},

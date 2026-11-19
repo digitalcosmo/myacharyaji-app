@@ -12,48 +12,63 @@ class AuthController extends GetxController {
   final acharyaCodeController = TextEditingController();
 
   final isLoading = false.obs;
+  final errorMessage = ''.obs;
   final selectedCountryCode = '+91'.obs;
   final isTAndC = true.obs;
 
   String? registrationRequired;
 
+  void _showSnackbar(String title, String message, {bool isError = true}) {
+    if (!Get.isSnackbarOpen) {
+      Get.snackbar(
+        title,
+        message,
+        backgroundColor: isError
+            ? Colors.red.withValues(alpha: 0.8)
+            : Colors.green.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(12),
+      );
+    }
+  }
+
   // ───── Send OTP ─────
   Future<void> sendOtp() async {
     if (phoneController.text.length < 7) {
-      Get.snackbar('Error', 'Enter a valid phone number',
-          backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+      _showSnackbar('Error', 'Enter a valid phone number');
       return;
     }
     try {
       isLoading.value = true;
+      errorMessage.value = '';
       final data = {'mobile': '${selectedCountryCode.value}${phoneController.text}'};
       final result = await _repo.sendOtp(data);
       isLoading.value = false;
 
       if (result['status'] == true) {
-        Get.snackbar('Success', result['msg'] ?? 'OTP sent',
-            backgroundColor: Colors.green.withValues(alpha: 0.8), colorText: Colors.white);
+        _showSnackbar('Success', result['msg'] ?? 'OTP sent', isError: false);
         Get.toNamed(AppRoutes.otp);
       } else {
-        Get.snackbar('Error', result['msg'] ?? 'Failed to send OTP',
-            backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+        _showSnackbar('Error', result['msg'] ?? 'Failed to send OTP');
       }
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+      errorMessage.value = e.toString();
+      debugPrint('SendOTP error: $e');
+      _showSnackbar('Error', 'Network error. Please check your connection.');
     }
   }
 
   // ───── Verify OTP ─────
   Future<void> verifyOtp() async {
     if (otpController.text.length < 4) {
-      Get.snackbar('Error', 'Enter a valid OTP',
-          backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+      _showSnackbar('Error', 'Enter a valid OTP');
       return;
     }
     try {
       isLoading.value = true;
+      errorMessage.value = '';
       final data = {
         'mobile': '${selectedCountryCode.value}${phoneController.text}',
         'otp': otpController.text,
@@ -66,29 +81,28 @@ class AuthController extends GetxController {
       if (result['status'] == true) {
         await UserData.setUserId(result['uID'].toString());
         registrationRequired = result['regstration_required'];
-        Get.snackbar('Success', result['msg'] ?? 'Verified',
-            backgroundColor: Colors.green.withValues(alpha: 0.8), colorText: Colors.white);
+        _showSnackbar('Success', result['msg'] ?? 'Verified', isError: false);
         Get.offAllNamed(AppRoutes.acharyaCode);
       } else {
-        Get.snackbar('Error', result['msg'] ?? 'Invalid OTP',
-            backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+        _showSnackbar('Error', result['msg'] ?? 'Invalid OTP');
       }
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+      errorMessage.value = e.toString();
+      debugPrint('VerifyOTP error: $e');
+      _showSnackbar('Error', 'Network error. Please check your connection.');
     }
   }
 
   // ───── Validate Acharyaji Code ─────
   Future<void> validateAcharyaCode() async {
     if (acharyaCodeController.text.isEmpty) {
-      Get.snackbar('Error', 'Enter Acharyaji code',
-          backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+      _showSnackbar('Error', 'Enter Acharyaji code');
       return;
     }
     try {
       isLoading.value = true;
+      errorMessage.value = '';
       final data = {'app_code': acharyaCodeController.text};
       final result = await _repo.validateAppCode(data);
       isLoading.value = false;
@@ -98,13 +112,13 @@ class AuthController extends GetxController {
         await UserData.setAppId(result['app_id'].toString());
         Get.offAllNamed(AppRoutes.home);
       } else {
-        Get.snackbar('Error', 'Invalid Acharyaji Code',
-            backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+        _showSnackbar('Error', 'Invalid Acharyaji Code');
       }
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          backgroundColor: Colors.red.withValues(alpha: 0.8), colorText: Colors.white);
+      errorMessage.value = e.toString();
+      debugPrint('AppDetails error: $e');
+      _showSnackbar('Error', 'Network error. Please check your connection.');
     }
   }
 
