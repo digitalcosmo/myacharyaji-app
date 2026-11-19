@@ -68,7 +68,10 @@ class HomeTab extends StatelessWidget {
               itemBuilder: (_, i) {
                 final sel = home.selectedRashi.value == i;
                 return GestureDetector(
-                  onTap: () => home.selectRashi(i),
+                  onTap: () {
+                    home.selectRashi(i);
+                    Get.toNamed('/rashi-prediction', arguments: i);
+                  },
                   child: Container(
                     width: 56,
                     decoration: BoxDecoration(

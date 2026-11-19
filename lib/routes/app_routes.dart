@@ -16,4 +16,6 @@ class AppRoutes {
   static const guidelines = '/guidelines';
   static const faq = '/faq';
   static const about = '/about';
+  static const reportReader = '/report-reader';
+  static const rashiPrediction = '/rashi-prediction';
 }

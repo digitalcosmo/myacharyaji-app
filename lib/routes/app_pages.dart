@@ -15,6 +15,8 @@ import '../features/profile/views/edit_profile_screen.dart';
 import '../features/home/views/guidelines_screen.dart';
 import '../features/home/views/faq_screen.dart';
 import '../features/home/views/about_screen.dart';
+import '../features/reports/views/report_reader_screen.dart';
+import '../features/predictions/views/rashi_prediction_screen.dart';
 
 class AppPages {
   AppPages._();
@@ -35,5 +37,7 @@ class AppPages {
     GetPage(name: AppRoutes.guidelines, page: () => const GuidelinesScreen()),
     GetPage(name: AppRoutes.faq, page: () => const FaqScreen()),
     GetPage(name: AppRoutes.about, page: () => const AboutScreen()),
+    GetPage(name: AppRoutes.reportReader, page: () => const ReportReaderScreen()),
+    GetPage(name: AppRoutes.rashiPrediction, page: () => const RashiPredictionScreen()),
   ];
 }
