@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/info_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/network/mock_data.dart';
 import '../../../widgets/glass_card.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -9,12 +10,12 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final app = MockData.appDetails;
-    final consultant = MockData.consultantDetails;
+    final c = Get.find<InfoController>();
+    c.loadConsultantDetails();
 
     return Scaffold(
       appBar: AppBar(title: const Text('About')),
-      body: ListView(
+      body: Obx(() => ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Center(
@@ -31,39 +32,41 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text('MyAcharyaji', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700)),
-                Text('v${app['version'] ?? '1.0.0'}', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textMuted)),
+                Text('v1.0.0', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textMuted)),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Your Consultant', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                _Row('Name', consultant['consultantName'] ?? '-'),
-                _Row('Contact', consultant['consultantContact'] ?? '-'),
-                _Row('Email', consultant['consultantEmail'] ?? '-'),
-              ],
+          if (c.isLoading.value)
+            const Center(child: CircularProgressIndicator())
+          else ...[
+            GlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Your Consultant', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  _Row('Name', c.consultantName.value.isNotEmpty ? c.consultantName.value : '-'),
+                  _Row('Contact', c.consultantMobile.value.isNotEmpty ? c.consultantMobile.value : '-'),
+                  _Row('Email', c.consultantEmail.value.isNotEmpty ? c.consultantEmail.value : '-'),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('About', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Text(
-                  app['about'] ?? 'MyAcharyaji is your personal astrology companion powered by CosmoKundli.',
-                  style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+            const SizedBox(height: 16),
+            if (c.consultantDescription.value.isNotEmpty)
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('About', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Text(c.consultantDescription.value, style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary, height: 1.5)),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+          ],
         ],
-      ),
+      )),
     );
   }
 }

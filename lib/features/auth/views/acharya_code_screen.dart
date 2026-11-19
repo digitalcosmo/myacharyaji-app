@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
 
 class AcharyaCodeScreen extends StatelessWidget {
   const AcharyaCodeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final codeCtrl = TextEditingController();
+    final c = Get.find<AuthController>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Acharyaji Code')),
@@ -31,24 +31,21 @@ class AcharyaCodeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               TextField(
-                controller: codeCtrl,
+                controller: c.acharyaCodeController,
                 textCapitalization: TextCapitalization.characters,
                 style: GoogleFonts.poppins(fontSize: 18, letterSpacing: 2),
                 decoration: const InputDecoration(hintText: 'e.g. ACH001'),
               ),
               const SizedBox(height: 24),
-              SizedBox(
+              Obx(() => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (codeCtrl.text.isNotEmpty) {
-                      // TODO: validate code via API
-                      Get.offAllNamed(AppRoutes.home);
-                    }
-                  },
-                  child: const Text('Continue'),
+                  onPressed: c.isLoading.value ? null : () => c.validateAcharyaCode(),
+                  child: c.isLoading.value
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Continue'),
                 ),
-              ),
+              )),
             ],
           ),
         ),

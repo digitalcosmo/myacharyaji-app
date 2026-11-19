@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/profile_controller.dart';
+import '../../../controllers/home_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/network/mock_data.dart';
 import '../../../widgets/glass_card.dart';
 import '../../../routes/app_routes.dart';
 
@@ -11,59 +12,55 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = MockData.profileDetails;
+    final c = Get.find<ProfileController>();
+    c.loadProfile();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Avatar + name
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 48,
-                  backgroundColor: AppColors.astronomicalBlue,
-                  child: Text(
-                    (p['name'] as String? ?? 'U')[0].toUpperCase(),
-                    style: GoogleFonts.poppins(fontSize: 36, fontWeight: FontWeight.w600, color: Colors.white),
+      body: Obx(() {
+        if (c.isLoading.value) return const Center(child: CircularProgressIndicator());
+        final name = '${c.firstName.value} ${c.surname.value}'.trim();
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 48,
+                    backgroundColor: AppColors.astronomicalBlue,
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                      style: GoogleFonts.poppins(fontSize: 36, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(p['name'] ?? '', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
-                Text(p['mobile'] ?? '', style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary)),
-              ],
+                  const SizedBox(height: 12),
+                  Text(name.isNotEmpty ? name : 'User', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
+                  Text(c.mobile.value, style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary)),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-
-          GlassCard(
-            child: Column(
-              children: [
-                _InfoRow(icon: Icons.cake_outlined, label: 'Date of Birth', value: p['dob'] ?? '-'),
-                const Divider(height: 24),
-                _InfoRow(icon: Icons.access_time, label: 'Time of Birth', value: p['tob'] ?? '-'),
-                const Divider(height: 24),
-                _InfoRow(icon: Icons.place_outlined, label: 'Place of Birth', value: p['pob'] ?? '-'),
-                const Divider(height: 24),
-                _InfoRow(icon: Icons.person_outline, label: 'Gender', value: p['gender'] ?? '-'),
-              ],
+            const SizedBox(height: 24),
+            GlassCard(
+              child: Column(
+                children: [
+                  _InfoRow(icon: Icons.cake_outlined, label: 'Date of Birth', value: c.dob.value.isNotEmpty ? c.dob.value : '-'),
+                  const Divider(height: 24),
+                  _InfoRow(icon: Icons.person_outline, label: 'Gender', value: c.gender.value.isNotEmpty ? c.gender.value : '-'),
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Menu items
-          _MenuItem(icon: Icons.info_outline, label: 'About', onTap: () => Get.toNamed(AppRoutes.about)),
-          _MenuItem(icon: Icons.menu_book_outlined, label: 'Guidelines', onTap: () => Get.toNamed(AppRoutes.guidelines)),
-          _MenuItem(icon: Icons.help_outline, label: 'FAQ', onTap: () => Get.toNamed(AppRoutes.faq)),
-          _MenuItem(icon: Icons.logout, label: 'Logout', color: Colors.red, onTap: () {
-            // TODO: clear auth, navigate to login
-            Get.offAllNamed(AppRoutes.login);
-          }),
-        ],
-      ),
+            const SizedBox(height: 16),
+            _MenuItem(icon: Icons.edit_outlined, label: 'Edit Profile', onTap: () => Get.toNamed(AppRoutes.editProfile)),
+            _MenuItem(icon: Icons.info_outline, label: 'About', onTap: () => Get.toNamed(AppRoutes.about)),
+            _MenuItem(icon: Icons.menu_book_outlined, label: 'Guidelines', onTap: () => Get.toNamed(AppRoutes.guidelines)),
+            _MenuItem(icon: Icons.help_outline, label: 'FAQ', onTap: () => Get.toNamed(AppRoutes.faq)),
+            _MenuItem(icon: Icons.logout, label: 'Logout', color: Colors.red, onTap: () {
+              Get.find<HomeController>().logout();
+            }),
+          ],
+        );
+      }),
     );
   }
 }

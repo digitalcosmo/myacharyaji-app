@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/prediction_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/network/mock_data.dart';
 import '../../../widgets/glass_card.dart';
+import '../../../widgets/zone_badge.dart';
 import '../../../widgets/dimension_bar.dart';
 
 class MonthlyPredictionScreen extends StatelessWidget {
@@ -10,53 +12,55 @@ class MonthlyPredictionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = MockData.monthlyData;
-    final dims = data['dimensions'] as List;
+    final c = Get.find<PredictionController>();
+    if (c.currentTab.value != 2) c.switchTab(2);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Monthly Prediction')),
-      body: ListView(
+      body: Obx(() => ListView(
         padding: const EdgeInsets.all(16),
         children: [
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['month'] ?? '', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(
-                  'Overall: ${data['overallScore']}',
-                  style: GoogleFonts.lexend(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.astronomicalBlue),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => c.changeMonth(-1)),
+                    Text(c.monthDisplay, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                    IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => c.changeMonth(1)),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('5D Breakdown', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                ...dims.map((d) => DimensionBar(dimension: d['key'], label: d['label'], score: d['score'])),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Overall Score', style: GoogleFonts.poppins(fontSize: 14)),
+                    ZoneBadge(score: c.overallScore),
+                  ],
+                ),
+                Text('${c.overallScore}', style: GoogleFonts.lexend(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.astronomicalBlue)),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          if (data['summary'] != null)
+          if (c.isLoading.value)
+            const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+          else
             GlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Summary', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+                  Text('5D Breakdown', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  Text(data['summary'], style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary, height: 1.6)),
+                  ...c.dimensions.map((d) => DimensionBar(dimension: d['key'], label: d['label'], score: d['score'])),
                 ],
               ),
             ),
           const SizedBox(height: 24),
         ],
-      ),
+      )),
     );
   }
 }

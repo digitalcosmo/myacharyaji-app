@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
 
 class OtpScreen extends StatelessWidget {
   const OtpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final c = Get.find<AuthController>();
     final phone = Get.arguments as String? ?? '';
     final otpCtrls = List.generate(4, (_) => TextEditingController());
     final focusNodes = List.generate(4, (_) => FocusNode());
@@ -55,23 +56,25 @@ class OtpScreen extends StatelessWidget {
                 )),
               ),
               const SizedBox(height: 32),
-              SizedBox(
+              Obx(() => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    final otp = otpCtrls.map((c) => c.text).join();
+                  onPressed: c.isLoading.value ? null : () {
+                    final otp = otpCtrls.map((ctrl) => ctrl.text).join();
                     if (otp.length == 4) {
-                      // TODO: verify OTP via API
-                      Get.toNamed(AppRoutes.acharyaCode);
+                      c.otpController.text = otp;
+                      c.verifyOtp();
                     }
                   },
-                  child: const Text('Verify'),
+                  child: c.isLoading.value
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Verify'),
                 ),
-              ),
+              )),
               const SizedBox(height: 16),
               Center(
                 child: TextButton(
-                  onPressed: () { /* TODO: resend OTP */ },
+                  onPressed: () => c.sendOtp(),
                   child: Text('Resend OTP', style: GoogleFonts.poppins(color: AppColors.solarGold)),
                 ),
               ),

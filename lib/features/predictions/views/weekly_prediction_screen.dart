@@ -1,68 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/prediction_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/network/mock_data.dart';
 import '../../../widgets/glass_card.dart';
 import '../../../widgets/zone_badge.dart';
+import '../../../widgets/dimension_bar.dart';
 
 class WeeklyPredictionScreen extends StatelessWidget {
   const WeeklyPredictionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final data = MockData.weeklyData;
-    final days = data['days'] as List;
+    final c = Get.find<PredictionController>();
+    if (c.currentTab.value != 1) c.switchTab(1);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Weekly Prediction')),
-      body: ListView(
+      body: Obx(() => ListView(
         padding: const EdgeInsets.all(16),
         children: [
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['weekRange'] ?? '', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(data['summary'] ?? '', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary, height: 1.5)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => c.changeWeek(-1)),
+                    Column(children: [
+                      Text('Week ${c.weekNumber}', style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary)),
+                      Text(c.weekRange, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ]),
+                    IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => c.changeWeek(1)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Overall Score', style: GoogleFonts.poppins(fontSize: 14)),
+                    ZoneBadge(score: c.overallScore),
+                  ],
+                ),
+                Text('${c.overallScore}', style: GoogleFonts.lexend(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.astronomicalBlue)),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          ...days.map((d) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: GlassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
+          if (c.isLoading.value)
+            const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+          else
+            GlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 50,
-                    child: Text(d['day'] ?? '', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
-                  ),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: (d['score'] as int) / 100,
-                        minHeight: 10,
-                        backgroundColor: AppColors.orbitLine.withOpacity(0.3),
-                        valueColor: AlwaysStoppedAnimation(AppColors.zoneOf(d['score']).color),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 30,
-                    child: Text('${d['score']}', style: GoogleFonts.lexend(fontSize: 14, fontWeight: FontWeight.w600)),
-                  ),
-                  ZoneBadge(score: d['score'], showLabel: false),
+                  Text('5D Dimensions', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  ...c.dimensions.map((d) => DimensionBar(dimension: d['key'], label: d['label'], score: d['score'])),
                 ],
               ),
             ),
-          )),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
         ],
-      ),
+      )),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/storage/user_data.dart';
 import '../../../routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -23,9 +24,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _scale = Tween(begin: 0.85, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
     _ctrl.forward();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      // TODO: check auth state → home or login
-      Get.offAllNamed(AppRoutes.login);
+    Future.delayed(const Duration(seconds: 3), () async {
+      final loggedIn = await UserData.isLoggedIn();
+      if (loggedIn) {
+        Get.offAllNamed(AppRoutes.home);
+      } else {
+        Get.offAllNamed(AppRoutes.login);
+      }
     });
   }
 

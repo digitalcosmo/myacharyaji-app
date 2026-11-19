@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../controllers/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final phoneCtrl = TextEditingController();
+    final c = Get.find<AuthController>();
 
     return Scaffold(
       body: SafeArea(
@@ -20,7 +20,6 @@ class LoginScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(flex: 2),
-              // Orbital decoration
               Center(
                 child: Stack(
                   alignment: Alignment.center,
@@ -40,7 +39,6 @@ class LoginScreen extends StatelessWidget {
                       ),
                       child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
                     ),
-                    // Small planet dot on the orbit
                     Positioned(
                       top: 5, right: 15,
                       child: Container(
@@ -68,7 +66,7 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               TextField(
-                controller: phoneCtrl,
+                controller: c.phoneController,
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                 style: GoogleFonts.poppins(fontSize: 18, letterSpacing: 1.5),
@@ -82,17 +80,15 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
+              Obx(() => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (phoneCtrl.text.length == 10) {
-                      Get.toNamed(AppRoutes.otp, arguments: phoneCtrl.text);
-                    }
-                  },
-                  child: const Text('Send OTP'),
+                  onPressed: c.isLoading.value ? null : () => c.sendOtp(),
+                  child: c.isLoading.value
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Send OTP'),
                 ),
-              ),
+              )),
               const Spacer(flex: 3),
               Center(
                 child: Text(
