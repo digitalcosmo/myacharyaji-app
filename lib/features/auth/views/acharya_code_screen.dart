@@ -14,7 +14,7 @@ class AcharyaCodeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Acharyaji Code')),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -29,7 +29,7 @@ class MyAcharyajiApp extends StatelessWidget {
       initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
       initialBinding: BindingsBuilder(() {
-        Get.lazyPut(() => AuthController());
+        Get.put(AuthController(), permanent: true);
         Get.lazyPut(() => HomeController());
         Get.lazyPut(() => PredictionController());
         Get.lazyPut(() => ProfileController());
