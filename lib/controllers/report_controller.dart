@@ -11,6 +11,7 @@ class ReportController extends GetxController {
   final reportList = <Map<String, dynamic>>[].obs;
 
   // Currently selected member
+  final selectedIndex = 0.obs;
   final selectedRId = ''.obs;
   final selectedName = ''.obs;
   final selectedDuration = ''.obs;
@@ -45,6 +46,7 @@ class ReportController extends GetxController {
   }
 
   void selectMember(int index) {
+    selectedIndex.value = index;
     final r = reportList[index];
     selectedRId.value = r['R_ID'] ?? '';
     selectedName.value = r['Name'] ?? '';

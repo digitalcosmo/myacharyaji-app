@@ -12,6 +12,13 @@ class PredictionController extends GetxController {
   // Tab: 0=Daily, 1=Weekly, 2=Monthly
   final currentTab = 0.obs;
 
+  // Period string for new UI
+  final selectedPeriod = 'daily'.obs;
+
+  // Sentiments & situations from API
+  final sentiments = <Map<String, dynamic>>[].obs;
+  final situations = <Map<String, dynamic>>[].obs;
+
   // 5D scores
   final career = 0.obs;
   final finance = 0.obs;
@@ -158,6 +165,15 @@ class PredictionController extends GetxController {
       case 0: fetchDaily(); break;
       case 1: fetchWeekly(); break;
       case 2: fetchMonthly(); break;
+    }
+  }
+
+  void changePeriod(String period) {
+    selectedPeriod.value = period;
+    switch (period) {
+      case 'daily': switchTab(0); break;
+      case 'weekly': switchTab(1); break;
+      case 'monthly': switchTab(2); break;
     }
   }
 }

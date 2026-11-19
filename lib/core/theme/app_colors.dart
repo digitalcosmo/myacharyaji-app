@@ -11,16 +11,34 @@ class ZoneInfo {
 class AppColors {
   AppColors._();
 
-  // ─── App Theme (Light Astronomical) ───
-  static const scaffoldBg = Color(0xFFF5F7FA);
-  static const surfaceLight = Color(0xFFE8EEF6);
-  static const cardBg = Colors.white;
-  static const astronomicalBlue = Color(0xFF1A3A6B);
-  static const solarGold = Color(0xFFC9963B);
-  static const orbitLine = Color(0xFFB0C4E0);
-  static const textPrimary = Color(0xFF1A1D26);
-  static const textSecondary = Color(0xFF6B7280);
-  static const textMuted = Color(0xFF9CA3AF);
+  // ─── Dark Cosmic Palette ───
+  static const bg = Color(0xFF080A1A);
+  static const bg2 = Color(0xFF0E1130);
+  static const card = Color(0x0EFFFFFF);        // ~5.5% white
+  static const card2 = Color(0x17FFFFFF);       // ~9% white
+  static const line = Color(0x17FFFFFF);         // ~9% white
+  static const surface = Color(0xFF0E1130);
+
+  static const tx = Color(0xFFF1EFFA);          // primary text
+  static const tx2 = Color(0xFFB4B0D0);         // secondary text
+  static const tx3 = Color(0xFF8682A8);          // muted text
+
+  static const sun = Color(0xFFF7B84B);          // solar gold primary
+  static const sun2 = Color(0xFFFFD889);         // solar gold light
+  static const teal = Color(0xFF4FD6C4);         // teal accent
+  static const vio = Color(0xFF9D8DFF);          // violet accent
+  static const rose = Color(0xFFFF8A7A);         // rose accent
+
+  // Legacy aliases for existing code
+  static const scaffoldBg = bg;
+  static const surfaceLight = bg2;
+  static const cardBg = Color(0xFF141733);
+  static const astronomicalBlue = Color(0xFF8EA8FF);
+  static const solarGold = sun;
+  static const orbitLine = line;
+  static const textPrimary = tx;
+  static const textSecondary = tx2;
+  static const textMuted = tx3;
 
   // ─── CVPT Report Palette ───
   static const reportBlue = Color(0xFF689DFF);
@@ -58,7 +76,6 @@ class AppColors {
     'Carry on as usual', 'Move ahead', 'Make the most of it',
   ];
 
-  /// Zone thresholds: value 0-100 → ZoneInfo
   static ZoneInfo zoneOf(num v) {
     int idx;
     if (v <= 15) { idx = 0; }
@@ -76,17 +93,40 @@ class AppColors {
     );
   }
 
+  // ─── 5D Dimension Colors (from prototype) ───
+  static const dimCareer = Color(0xFFF7B84B);
+  static const dimFinance = Color(0xFFFFD889);
+  static const dimSocial = Color(0xFF4FD6C4);
+  static const dimHealth = Color(0xFF9D8DFF);
+  static const dimLove = Color(0xFFFF8A7A);
+
+  static const Map<String, Color> dimensionColor = {
+    'career': dimCareer,
+    'finance': dimFinance,
+    'social': dimSocial,
+    'health': dimHealth,
+    'love': dimLove,
+  };
+
+  static const Map<String, String> dimensionIcon = {
+    'career': 'M4 8h16v12H4zM9 8V5h6v3',
+    'finance': 'M12 3v18M16 7H10a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8',
+    'social': 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 6M15 11a3 3 0 1 0 0-6',
+    'health': 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z',
+    'love': 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z',
+  };
+
   // ─── 5D Dimension Gradients ───
   static const _dimGradients = <String, List<Color>>{
-    'career':  [Color(0xFFD3F7C3), Color(0xFF8EE88D)],
-    'finance': [Color(0xFFA8D1FF), Color(0xFF1A8CFF)],
-    'health':  [Color(0xFFDCFFFF), Color(0xFF00F0FF)],
-    'social':  [Color(0xFFFFFFFF), Color(0xFFCDCDCD)],
-    'love':    [Color(0xFFFF7B84), Color(0xFFD81F26)],
+    'career':  [Color(0xFFF7B84B), Color(0xFFD4941A)],
+    'finance': [Color(0xFFFFD889), Color(0xFFF7B84B)],
+    'health':  [Color(0xFF9D8DFF), Color(0xFF6B5CE7)],
+    'social':  [Color(0xFF4FD6C4), Color(0xFF2BAB9A)],
+    'love':    [Color(0xFFFF8A7A), Color(0xFFE05545)],
   };
 
   static List<Color> dimensionGradient(String key) =>
-      _dimGradients[key] ?? [reportBlue, reportBlueIce];
+      _dimGradients[key] ?? [sun, sun2];
 
   // ─── Zone Bar Gradients ───
   static List<List<Color>> zoneBarGradients = [
@@ -98,4 +138,17 @@ class AppColors {
     [const Color(0xFFA8D1FF), const Color(0xFF1A8CFF)],
     [const Color(0xFFD3F7C3), const Color(0xFF8EE88D)],
   ];
+
+  // ─── Rashi data ───
+  static const rashiSymbols = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+  static const rashiNames = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+
+  // ─── Report type gradients ───
+  static const reportGradients = <String, List<Color>>{
+    'blueprint':  [Color(0xFF4FD6C4), Color(0xFF1A8F7F)],
+    'trajectory': [Color(0xFFF7B84B), Color(0xFFD4751A)],
+    'vibes':      [Color(0xFF9D8DFF), Color(0xFF4B3BB8)],
+    'intensity':  [Color(0xFFFF8A7A), Color(0xFFC74040)],
+    'planner':    [Color(0xFF689DFF), Color(0xFF2D5BD0)],
+  };
 }

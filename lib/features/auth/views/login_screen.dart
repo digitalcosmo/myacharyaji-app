@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../widgets/cosmic_bg.dart';
+import '../../../widgets/orbital_logo.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -13,91 +15,96 @@ class LoginScreen extends StatelessWidget {
     final c = Get.find<AuthController>();
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(flex: 2),
-              Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 100, height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.orbitLine, width: 1),
-                      ),
-                    ),
-                    Container(
-                      width: 50, height: 50,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.astronomicalBlue,
-                      ),
-                      child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
-                    ),
-                    Positioned(
-                      top: 5, right: 15,
-                      child: Container(
-                        width: 10, height: 10,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: AppColors.solarGold,
+      resizeToAvoidBottomInset: true,
+      body: CosmicBg(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
+                const OrbitalLogo(size: 120),
+                const SizedBox(height: 8),
+                Text(
+                  'MyAcharyaji',
+                  style: GoogleFonts.spaceGrotesk(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.tx),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your reports and planners from your Acharyaji, beautifully in one place.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.tx2, height: 1.55),
+                ),
+                const SizedBox(height: 48),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'MOBILE NUMBER',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.tx3, letterSpacing: 1.4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 18),
+                      Text('+91', style: GoogleFonts.inter(fontSize: 18, color: AppColors.tx2, fontWeight: FontWeight.w600)),
+                      Container(width: 1, height: 28, margin: const EdgeInsets.symmetric(horizontal: 12), color: AppColors.line),
+                      Expanded(
+                        child: TextField(
+                          controller: c.phoneController,
+                          keyboardType: TextInputType.phone,
+                          maxLength: 10,
+                          style: GoogleFonts.inter(fontSize: 18, color: AppColors.tx, letterSpacing: 0.5),
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            counterText: '',
+                            hintText: '98XXX XXXXX',
+                            hintStyle: GoogleFonts.inter(fontSize: 18, color: AppColors.tx3.withValues(alpha: 0.5)),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            isDense: true,
+                            filled: false,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              Text(
-                'Welcome',
-                style: GoogleFonts.poppins(
-                  fontSize: 28, fontWeight: FontWeight.w700,
-                  color: AppColors.astronomicalBlue,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Enter your mobile number to get started',
-                style: GoogleFonts.poppins(fontSize: 15, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: c.phoneController,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-                style: GoogleFonts.poppins(fontSize: 18, letterSpacing: 1.5),
-                decoration: InputDecoration(
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 8),
-                    child: Text('+91', style: GoogleFonts.poppins(fontSize: 18, color: AppColors.textSecondary)),
+                      const SizedBox(width: 18),
+                    ],
                   ),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 60),
-                  hintText: '00000 00000',
                 ),
-              ),
-              const SizedBox(height: 24),
-              Obx(() => SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: c.isLoading.value ? null : () => c.sendOtp(),
-                  child: c.isLoading.value
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Send OTP'),
+                const SizedBox(height: 24),
+                Obx(() => SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: c.isLoading.value ? null : () => c.sendOtp(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.sun,
+                      foregroundColor: const Color(0xFF1A1205),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(27)),
+                      elevation: 0,
+                    ),
+                    child: c.isLoading.value
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A1205)))
+                        : Text('Send OTP', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
+                  ),
+                )),
+                const SizedBox(height: 24),
+                Text(
+                  'By continuing, you agree to our terms of service',
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.tx3),
                 ),
-              )),
-              const Spacer(flex: 3),
-              Center(
-                child: Text(
-                  'Powered by CosmoKundli',
-                  style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
