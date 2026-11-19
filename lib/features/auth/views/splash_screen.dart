@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _ctrl.forward();
 
     Future.delayed(const Duration(seconds: 3), () async {
-      final loggedIn = await UserData.isLoggedIn();
+      final loggedIn = await UserData.getLoggedIn();
       if (loggedIn) {
         Get.offAllNamed(AppRoutes.home);
       } else {

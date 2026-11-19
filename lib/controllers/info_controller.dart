@@ -54,7 +54,7 @@ class InfoController extends GetxController {
     try {
       isLoading.value = true;
       final appId = await UserData.getAppId();
-      final result = await _repo.getConsultantDetails({'app_id': appId});
+      final result = await _repo.getConsultantDetails(appId);
       isLoading.value = false;
       if (result['status'] == true) {
         consultantName.value = result['name'] ?? '';
