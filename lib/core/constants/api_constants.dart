@@ -2,7 +2,7 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const bool useMock = true;
+  static const bool useMock = false;
   static const String baseUrl = 'https://software.cosmokundli.com/API/';
 
   // Auth

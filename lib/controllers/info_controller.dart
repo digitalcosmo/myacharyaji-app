@@ -27,9 +27,7 @@ class InfoController extends GetxController {
       isLoading.value = true;
       final result = await _repo.getGuidelines();
       isLoading.value = false;
-      if (result['status'] == true) {
-        guidelineContent.value = result['content'] ?? '';
-      }
+      guidelineContent.value = result['content'] ?? '';
     } catch (e) {
       isLoading.value = false;
       debugPrint('Guidelines error: $e');
@@ -41,8 +39,8 @@ class InfoController extends GetxController {
       isLoading.value = true;
       final result = await _repo.getFaqs();
       isLoading.value = false;
-      if (result['status'] == true && result['data'] is List) {
-        faqList.value = List<Map<String, dynamic>>.from(result['data']);
+      if (result['status'] == true && result['list'] is List) {
+        faqList.value = List<Map<String, dynamic>>.from(result['list']);
       }
     } catch (e) {
       isLoading.value = false;
