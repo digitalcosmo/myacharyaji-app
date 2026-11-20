@@ -1,0 +1,10 @@
+commit: 79244b2b4136fdf3d3927d82ad3aac1230ae58f7
+ref: refs/heads/ios-build
+build_exit: 0
+===== BUILD (errors) =====
+===== BUILD (tail) =====
+Warning: Building for device with codesigning disabled. You will have to manually codesign before deploying to device.
+Building com.cosmoguru.myacharyaji for device (ios-release)...
+Running Xcode build...                                          
+Xcode build done.                                           45.0s
+✓ Built build/ios/iphoneos/Runner.app (18.6MB)
