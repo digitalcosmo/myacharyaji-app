@@ -42,13 +42,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/icons/
 
-  fonts:
-    - family: LexendGiga
-      fonts:
-        - asset: assets/fonts/LexendGiga-Regular.ttf
-        - asset: assets/fonts/LexendGiga-Bold.ttf
-          weight: 700
