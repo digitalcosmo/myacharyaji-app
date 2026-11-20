@@ -1,0 +1,82 @@
+name: iOS (unsigned IPA)
+
+# macOS minutes cost ~10x on private repos, so this only runs on demand:
+# push a tag like "ios-1" or start it from the Actions tab.
+on:
+  push:
+    tags: ['ios-*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate platform folders (repo only tracks lib/)
+        run: |
+          flutter create . --project-name myacharyaji --org com.cosmoguru --platforms=ios
+          rm -rf test
+          # Display name on the home screen
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName MyAcharyaji" ios/Runner/Info.plist
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Build unsigned release app
+        id: build
+        run: |
+          set +e
+          flutter build ios --release --no-codesign > build.txt 2>&1
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          tail -40 build.txt
+
+      - name: Package IPA
+        if: steps.build.outputs.code == '0'
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qr MyAcharyaji-unsigned.ipa Payload
+          ls -lh MyAcharyaji-unsigned.ipa
+
+      - name: Upload IPA
+        if: steps.build.outputs.code == '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: myacharyaji-ios-unsigned-ipa
+          path: MyAcharyaji-unsigned.ipa
+          retention-days: 14
+
+      - name: Publish result to ci-results-ios branch
+        if: always()
+        run: |
+          {
+            echo "commit: $GITHUB_SHA"
+            echo "ref: $GITHUB_REF"
+            echo "build_exit: ${{ steps.build.outputs.code }}"
+            echo "===== BUILD (errors) ====="
+            grep -nE "Error|error:|FAILED" -A3 build.txt | head -80 || true
+            echo "===== BUILD (tail) ====="
+            tail -30 build.txt
+          } > /tmp/ci-report.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git checkout --orphan ci-ios-tmp
+          git rm -rf --cached . -q
+          cp /tmp/ci-report.txt ci-report.txt
+          git add ci-report.txt
+          git commit -m "iOS CI report for ${GITHUB_SHA::7}" -q
+          git push -f origin HEAD:ci-results-ios
+
+      - name: Fail if build failed
+        if: steps.build.outputs.code != '0'
+        run: exit 1
