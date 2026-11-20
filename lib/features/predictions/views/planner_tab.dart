@@ -21,7 +21,7 @@ class PlannerTab extends StatelessWidget {
         if (!rc.hasReports) return _EmptyState();
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           children: [
             Text('Planner',
                 style: GoogleFonts.spaceGrotesk(
