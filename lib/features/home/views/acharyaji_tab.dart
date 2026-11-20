@@ -211,8 +211,44 @@ class AcharyajiTab extends StatelessWidget {
               ...ic.faqList.map((f) => _FaqTile(f)),
             ],
 
+            // ── Acharyaji code + Logout card ──
+            _Card(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Your Acharyaji code',
+                            style: GoogleFonts.inter(
+                                fontSize: 12, color: AppColors.tx3)),
+                        const SizedBox(height: 4),
+                        Text(ic.acharyajiCode.isNotEmpty
+                                ? ic.acharyajiCode.value
+                                : 'ACH4821',
+                            style: GoogleFonts.spaceGrotesk(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 3,
+                                color: AppColors.tx)),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Get.offAllNamed('/login'),
+                    child: Text('Log out',
+                        style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.sun)),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
             // ── Guidelines link ──
-            const SizedBox(height: 20),
             GestureDetector(
               onTap: () => Get.toNamed('/guidelines'),
               child: Container(

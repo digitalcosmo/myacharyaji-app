@@ -21,6 +21,7 @@ class InfoController extends GetxController {
   final consultantEmail = ''.obs;
   final consultantDescription = ''.obs;
   final consultantIcon = ''.obs;
+  final acharyajiCode = ''.obs;
 
   Future<void> loadGuidelines() async {
     try {
@@ -55,6 +56,7 @@ class InfoController extends GetxController {
     try {
       isLoading.value = true;
       final appId = await UserData.getAppId();
+      acharyajiCode.value = appId;
       final result = await _repo.getConsultantDetails(appId);
       isLoading.value = false;
       if (result['status'] == true) {

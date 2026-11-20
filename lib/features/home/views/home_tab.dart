@@ -141,6 +141,20 @@ class HomeTab extends StatelessWidget {
           // ── Selected rashi card with 5D bars ──
           Obx(() {
             final sel = home.selectedRashi.value;
+            final loading = pred.isLoading.value;
+            // Read all reactive dimension values to ensure GetX tracks them
+            final c = pred.career.value;
+            final f = pred.finance.value;
+            final h = pred.health.value;
+            final s = pred.social.value;
+            final l = pred.love.value;
+            final dims = [
+              {'label': 'Career', 'key': 'career', 'score': c},
+              {'label': 'Finance', 'key': 'finance', 'score': f},
+              {'label': 'Health', 'key': 'health', 'score': h},
+              {'label': 'Social', 'key': 'social', 'score': s},
+              {'label': 'Love', 'key': 'love', 'score': l},
+            ];
             return _GlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,17 +191,17 @@ class HomeTab extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  if (pred.isLoading.value)
+                  if (loading)
                     const Center(
                         child: Padding(
                             padding: EdgeInsets.all(20),
                             child: CircularProgressIndicator(
                                 color: AppColors.sun)))
                   else
-                    ...pred.dimensions.map((d) => _DimBarRow(
-                          label: d['label'],
-                          dimKey: d['key'],
-                          score: d['score'],
+                    ...dims.map((d) => _DimBarRow(
+                          label: d['label'] as String,
+                          dimKey: d['key'] as String,
+                          score: d['score'] as int,
                           color: AppColors.dimensionColor[d['key']] ??
                               AppColors.sun,
                         )),

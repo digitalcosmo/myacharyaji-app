@@ -28,16 +28,11 @@ class ReportsTab extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('My Reports',
-                          style: GoogleFonts.spaceGrotesk(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.tx)),
-                    ],
-                  ),
+                  child: Text('My Reports',
+                      style: GoogleFonts.spaceGrotesk(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.tx)),
                 ),
                 Text('${rc.reportList.length} reports',
                     style: GoogleFonts.inter(
@@ -66,13 +61,9 @@ class ReportsTab extends StatelessWidget {
                             const EdgeInsets.symmetric(horizontal: 15),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(18),
-                          color: sel
-                              ? AppColors.tx
-                              : AppColors.card,
+                          color: sel ? AppColors.tx : AppColors.card,
                           border: Border.all(
-                              color: sel
-                                  ? AppColors.tx
-                                  : AppColors.line),
+                              color: sel ? AppColors.tx : AppColors.line),
                         ),
                         child: Center(
                           child: Text(
@@ -94,7 +85,11 @@ class ReportsTab extends StatelessWidget {
               const SizedBox(height: 20),
             ],
 
-            // Report cards with gradient art thumbnails
+            // ── NEW banner card ──
+            _NewBannerCard(),
+            const SizedBox(height: 14),
+
+            // Report cards
             ..._reportTypes.map((rt) => _ReportCard(rt: rt)),
           ],
         );
@@ -103,36 +98,96 @@ class ReportsTab extends StatelessWidget {
   }
 }
 
+// ── NEW Banner Card (gradient highlight for latest report) ──
+class _NewBannerCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x38F7B84B), // rgba(247,184,75,.22)
+            Color(0x1F9D8DFF), // rgba(157,141,255,.12)
+          ],
+        ),
+        border: Border.all(
+          color: const Color(0x59F7B84B), // rgba(247,184,75,.35)
+        ),
+      ),
+      child: Row(
+        children: [
+          Text('NEW',
+              style: GoogleFonts.spaceGrotesk(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.sun2)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('CK Trajectory is ready',
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.tx)),
+                const SizedBox(height: 2),
+                Text('Delivered by your Acharyaji on 02 Nov',
+                    style:
+                        GoogleFonts.inter(fontSize: 12, color: AppColors.tx3)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final _reportTypes = [
   {
     'key': 'blueprint',
     'title': 'CK Blueprint',
-    'sub': 'Your cosmic DNA — birth chart decoded',
-    'gradient': [const Color(0xFFF7B84B), const Color(0xFFB97800)],
+    'sub': 'Your kundli, GRAH power & flavour',
+    'gradient': [const Color(0xFFF7B84B), const Color(0xFFB9741A)],
+    'tag': 'Who you are',
+    'date': '12 Oct',
   },
   {
     'key': 'trajectory',
     'title': 'CK Trajectory',
-    'sub': 'Life timeline — planetary transits ahead',
-    'gradient': [const Color(0xFF4FD6C4), const Color(0xFF1A7A6E)],
+    'sub': 'GRAH Vibes & Intensity over 12 months',
+    'gradient': [const Color(0xFF4FD6C4), const Color(0xFF1C6E7A)],
+    'tag': "What's coming",
+    'date': '02 Nov',
   },
   {
     'key': 'vibes',
     'title': 'CK Vibes',
     'sub': 'Monthly emotional & social weather',
     'gradient': [const Color(0xFFFF8A7A), const Color(0xFFA84035)],
+    'tag': 'Vibes',
+    'date': '15 Oct',
   },
   {
     'key': 'intensity',
     'title': 'CK Intensity',
     'sub': 'Peak & low energy windows',
     'gradient': [const Color(0xFF9D8DFF), const Color(0xFF4B3BB8)],
+    'tag': 'Intensity',
+    'date': '15 Oct',
   },
   {
     'key': 'planner',
     'title': 'CK Planner',
     'sub': 'Daily Sentiments & Situations; Plus & Max add 5D',
     'gradient': [const Color(0xFF9D8DFF), const Color(0xFF4B3BB8)],
+    'tag': 'Planner',
+    'date': '01 Nov',
   },
 ];
 
@@ -144,20 +199,22 @@ class _ReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final key = rt['key'] as String;
     final colors = rt['gradient'] as List<Color>;
+    final tag = rt['tag'] as String;
+    final date = rt['date'] as String;
 
     return GestureDetector(
       onTap: () => Get.toNamed('/report-reader', arguments: {'type': key}),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           color: AppColors.card,
           border: Border.all(color: AppColors.line),
         ),
         child: Row(
           children: [
-            // Gradient art thumbnail
+            // Gradient art thumbnail with highlight overlay
             Container(
               width: 56,
               height: 56,
@@ -176,13 +233,27 @@ class _ReportCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  'CK',
-                  style: GoogleFonts.spaceGrotesk(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white.withValues(alpha: 0.9)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    // Radial highlight (matches prototype .art::after)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(0.4, -0.4),
+                            radius: 0.9,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.45),
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.5],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -200,6 +271,30 @@ class _ReportCard extends StatelessWidget {
                   Text(rt['sub'] as String,
                       style: GoogleFonts.inter(
                           fontSize: 12, color: AppColors.tx3)),
+                  const SizedBox(height: 8),
+                  // Tag + date row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: colors[0].withValues(alpha: 0.13),
+                        ),
+                        child: Text(tag.toUpperCase(),
+                            style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1,
+                                color: colors[0])),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(date,
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: AppColors.tx3)),
+                    ],
+                  ),
                 ],
               ),
             ),
