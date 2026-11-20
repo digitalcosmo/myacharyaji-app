@@ -1,10 +1,11 @@
 name: iOS (unsigned IPA)
 
 # macOS minutes cost ~10x on private repos, so this only runs on demand:
-# push a tag like "ios-1" or start it from the Actions tab.
+# push main to the "ios-build" branch, or start it from the Actions tab.
+#   git push origin main:ios-build --force
 on:
   push:
-    tags: ['ios-*']
+    branches: [ios-build]
   workflow_dispatch:
 
 permissions:
