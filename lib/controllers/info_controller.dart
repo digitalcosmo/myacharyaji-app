@@ -39,8 +39,11 @@ class InfoController extends GetxController {
       isLoading.value = true;
       final result = await _repo.getFaqs();
       isLoading.value = false;
-      if (result['status'] == true && result['list'] is List) {
-        faqList.value = List<Map<String, dynamic>>.from(result['list']);
+      if (result['status'] == true) {
+        final list = result['list'] ?? result['List'] ?? result['data'] ?? [];
+        if (list is List) {
+          faqList.value = List<Map<String, dynamic>>.from(list);
+        }
       }
     } catch (e) {
       isLoading.value = false;

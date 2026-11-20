@@ -259,14 +259,16 @@ class _FaqTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final q = faq['Question'] ?? faq['question'] ?? '';
+    final a = faq['Answer'] ?? faq['answer'] ?? '';
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(bottom: 8),
-      title: Text(faq['Question'] ?? '', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.tx)),
+      title: Text(q, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.tx)),
       iconColor: AppColors.tx3,
       collapsedIconColor: AppColors.tx3,
       children: [
-        Text(faq['Answer'] ?? '', style: GoogleFonts.inter(fontSize: 13, color: AppColors.tx2, height: 1.5)),
+        Text(a, style: GoogleFonts.inter(fontSize: 13, color: AppColors.tx2, height: 1.5)),
       ],
     );
   }
