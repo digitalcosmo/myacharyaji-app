@@ -1,501 +1,485 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../controllers/home_controller.dart';
 import '../../../controllers/info_controller.dart';
+import '../../../controllers/profile_controller.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../models/load_result.dart';
+import '../../../routes/app_routes.dart';
+import '../../../ui/controls.dart';
+import '../../../ui/glass.dart';
+import '../../../ui/motion.dart';
+import '../../../ui/states.dart';
+import '../../../ui/stroke_icon.dart';
+import '../../../ui/tab_page.dart';
+import '../../../ui/tokens.dart';
 
+/// The consultant who set up the client's reports, plus the client's own
+/// account (profile, help, sign out).
 class AcharyajiTab extends StatelessWidget {
   const AcharyajiTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     final ic = Get.find<InfoController>();
+    return TabPage(
+      onRefresh: ic.loadConsultantDetails,
+      children: const [
+        _ConsultantHero(),
+        _ContactActions(),
+        _AboutCard(),
+        _ContactCard(),
+        _YouCard(),
+        _LinksCard(),
+        _SignOut(),
+      ],
+    );
+  }
+}
 
-    return SafeArea(
-      child: Obx(() {
-        if (ic.isLoading.value) {
-          return const Center(
-              child: CircularProgressIndicator(color: AppColors.sun));
-        }
-        final name = ic.consultantName.value;
-        final mobile = ic.consultantMobile.value;
-        final email = ic.consultantEmail.value;
-        final about = ic.consultantDescription.value;
-        final city = ic.consultantAddress.value;
+class _ConsultantHero extends StatelessWidget {
+  const _ConsultantHero();
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-          children: [
-            // ── Halo avatar ──
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Column(
-                  children: [
-                    // Halo ring avatar
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const SweepGradient(
-                          startAngle: 3.5,
-                          colors: [
-                            AppColors.sun,
-                            AppColors.sun2,
-                            AppColors.vio,
-                            AppColors.teal,
-                            AppColors.sun,
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                              color: AppColors.sun.withValues(alpha: 0.3),
-                              blurRadius: 30),
-                        ],
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 86,
-                          height: 86,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.bg2,
-                            border: Border.all(
-                                color: AppColors.bg, width: 3),
-                          ),
-                          child: Center(
-                            child: Text(
-                              _initials(name.isNotEmpty ? name : 'A'),
-                              style: GoogleFonts.spaceGrotesk(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.tx),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      name.isNotEmpty ? 'Acharya $name' : 'Your Acharyaji',
-                      style: GoogleFonts.spaceGrotesk(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.tx),
-                    ),
-                    if (city.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(city,
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: AppColors.tx3)),
-                    ],
-                    const SizedBox(height: 8),
-                    // Verified badge
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle,
-                            size: 14, color: AppColors.teal),
-                        const SizedBox(width: 5),
-                        Text('Verified CosmoKundli consultant',
-                            style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.teal)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // ── Action buttons ──
+  @override
+  Widget build(BuildContext context) {
+    final ic = Get.find<InfoController>();
+    return Obx(() {
+      final st = ic.consultantStatus.value;
+      if (st == LoadStatus.error) {
+        return Glass(child: InlineNotice.error(ic.consultantError.value, ic.loadConsultantDetails));
+      }
+      final loading = st == LoadStatus.loading;
+      final icon = ic.consultantIcon.value;
+      return Column(
+        children: [
+          const SizedBox(height: 8),
+          _Halo(
+            child: loading
+                ? const Skeleton(height: 92, width: 92, radius: 46)
+                : ClipOval(
+                    child: icon.startsWith('http')
+                        ? Image.network(icon,
+                            width: 92,
+                            height: 92,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _Initials(ic.consultantInitials))
+                        : _Initials(ic.consultantInitials),
+                  ),
+          ),
+          const SizedBox(height: 18),
+          if (loading) ...[
+            const Skeleton(height: 22, width: 180),
+            const SizedBox(height: 10),
+            const Skeleton(height: 12, width: 120),
+          ] else ...[
+            Text(ic.consultantName.value.isEmpty ? 'Your Acharyaji' : ic.consultantName.value,
+                style: T.h2, textAlign: TextAlign.center),
+            if (ic.consultantAddress.value.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(ic.consultantAddress.value, style: T.small, textAlign: TextAlign.center),
+            ],
+            const SizedBox(height: 10),
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _ActionCircle(
-                  icon: Icons.phone_outlined,
-                  label: 'Call',
-                  color: AppColors.teal,
-                  onTap: () => _launchAction('tel', mobile),
-                ),
-                const SizedBox(width: 12),
-                _ActionCircle(
-                  icon: Icons.chat_outlined,
-                  label: 'WhatsApp',
-                  color: const Color(0xFF7EE0A8),
-                  onTap: () => _launchAction('whatsapp', mobile),
-                ),
-                const SizedBox(width: 12),
-                _ActionCircle(
-                  icon: Icons.calendar_today_outlined,
-                  label: 'Book',
-                  color: AppColors.sun,
-                  onTap: () {},
-                ),
+                const StrokeIcon(Ic.check, color: AppColors.teal, size: 14, strokeWidth: 2.4),
+                const SizedBox(width: 6),
+                Text('CosmoKundli consultant',
+                    style: T.small.copyWith(color: AppColors.teal, fontWeight: FontWeight.w600)),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // ── About card ──
-            if (about.isNotEmpty) ...[
-              _Card(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('ABOUT',
-                        style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.tx3,
-                            letterSpacing: 1.4)),
-                    const SizedBox(height: 10),
-                    Text(about,
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppColors.tx2,
-                            height: 1.55)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-            ],
-
-            // ── Details card (key-value rows with dividers) ──
-            _Card(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-              child: Column(
-                children: [
-                  if (city.isNotEmpty)
-                    _KvRow('Location', city),
-                  if (email.isNotEmpty)
-                    _KvRow('Email', email),
-                  if (mobile.isNotEmpty)
-                    _KvRow('Phone', mobile, isLast: email.isEmpty),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // ── Stats row ──
-            _Card(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _StatCol('Reports', '5', 'types'),
-                  Container(
-                      width: 1,
-                      height: 36,
-                      color: AppColors.line),
-                  _StatCol('Active', '—', 'members'),
-                  Container(
-                      width: 1,
-                      height: 36,
-                      color: AppColors.line),
-                  _StatCol('Rating', '★', 'verified'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // ── FAQs ──
-            if (ic.faqList.isNotEmpty) ...[
-              Text('FREQUENTLY ASKED',
-                  style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.tx3,
-                      letterSpacing: 1.4)),
-              const SizedBox(height: 12),
-              ...ic.faqList.map((f) => _FaqTile(f)),
-            ],
-
-            // ── Acharyaji code + Logout card ──
-            _Card(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Your Acharyaji code',
-                            style: GoogleFonts.inter(
-                                fontSize: 12, color: AppColors.tx3)),
-                        const SizedBox(height: 4),
-                        Text(ic.acharyajiCode.isNotEmpty
-                                ? ic.acharyajiCode.value
-                                : 'ACH4821',
-                            style: GoogleFonts.spaceGrotesk(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 3,
-                                color: AppColors.tx)),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Get.offAllNamed('/login'),
-                    child: Text('Log out',
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.sun)),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // ── Guidelines link ──
-            GestureDetector(
-              onTap: () => Get.toNamed('/guidelines'),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: AppColors.card,
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline,
-                        color: AppColors.tx3, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text('Report guidelines & how to read them',
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.tx2)),
-                    ),
-                    Icon(Icons.chevron_right,
-                        color: AppColors.tx3, size: 20),
-                  ],
-                ),
-              ),
-            ),
           ],
-        );
-      }),
-    );
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name[0].toUpperCase();
-  }
-
-  static void _launchAction(String scheme, String? number) {
-    if (number == null || number.isEmpty) {
-      Get.snackbar('Unavailable', 'Contact info not available',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.card,
-          colorText: AppColors.tx);
-      return;
-    }
-    Get.snackbar('Action', '$scheme: $number',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.card,
-        colorText: AppColors.tx);
+        ],
+      );
+    });
   }
 }
 
-class _ActionCircle extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _ActionCircle(
-      {required this.icon,
-      required this.label,
-      required this.color,
-      required this.onTap});
+class _Halo extends StatefulWidget {
+  final Widget child;
+  const _Halo({required this.child});
+  @override
+  State<_Halo> createState() => _HaloState();
+}
+
+class _HaloState extends State<_Halo> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Column(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
+    return SizedBox(
+      width: 120,
+      height: 120,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          RotationTransition(
+            turns: _c,
+            child: Container(
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.15),
+                gradient: SweepGradient(colors: [
+                  AppColors.sun.withValues(alpha: 0.0),
+                  AppColors.sun.withValues(alpha: 0.7),
+                  AppColors.vio.withValues(alpha: 0.5),
+                  AppColors.sun.withValues(alpha: 0.0),
+                ]),
               ),
-              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(height: 8),
-            Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.tx2)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  final Widget child;
-  final EdgeInsets? padding;
-  const _Card({required this.child, this.padding});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: AppColors.card,
-            border: Border.all(color: AppColors.line),
           ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _KvRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isLast;
-  const _KvRow(this.label, this.value, {this.isLast = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : Border(bottom: BorderSide(color: AppColors.line)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 13, color: AppColors.tx3)),
+          Container(
+            width: 104,
+            height: 104,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.bg),
           ),
-          Expanded(
-            child: Text(value,
-                textAlign: TextAlign.right,
-                style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.tx)),
-          ),
+          widget.child,
         ],
       ),
     );
   }
 }
 
-class _StatCol extends StatelessWidget {
-  final String label;
-  final String value;
-  final String sub;
-  const _StatCol(this.label, this.value, this.sub);
+class _Initials extends StatelessWidget {
+  final String text;
+  const _Initials(this.text);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value,
-            style: GoogleFonts.spaceGrotesk(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.sun)),
-        const SizedBox(height: 2),
-        Text(sub,
-            style:
-                GoogleFonts.inter(fontSize: 11, color: AppColors.tx3)),
-      ],
+    return Container(
+      width: 92,
+      height: 92,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.sun2, AppColors.sun],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(text, style: T.h2.copyWith(fontSize: 30, color: const Color(0xFF1A1205))),
     );
   }
 }
 
-class _FaqTile extends StatefulWidget {
-  final Map<String, dynamic> faq;
-  const _FaqTile(this.faq);
-
-  @override
-  State<_FaqTile> createState() => _FaqTileState();
+Future<void> _open(Uri uri) async {
+  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!ok) {
+    Get.snackbar('Couldn\'t open', 'No app on this phone can handle that.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.bg2,
+        colorText: AppColors.tx,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 110));
+  }
 }
 
-class _FaqTileState extends State<_FaqTile> {
-  bool _open = false;
+String _digits(String s) => s.replaceAll(RegExp(r'[^0-9+]'), '');
+
+/// WhatsApp needs country code without "+"; assume India for 10-digit numbers.
+String _waNumber(String s) {
+  var d = s.replaceAll(RegExp(r'[^0-9]'), '');
+  if (d.length == 10) d = '91$d';
+  return d;
+}
+
+class _ContactActions extends StatelessWidget {
+  const _ContactActions();
 
   @override
   Widget build(BuildContext context) {
-    final q = widget.faq['Question'] ?? widget.faq['question'] ?? '';
-    final a = widget.faq['Answer'] ?? widget.faq['answer'] ?? '';
+    final ic = Get.find<InfoController>();
+    return Obx(() {
+      if (ic.consultantStatus.value != LoadStatus.ok) return const SizedBox.shrink();
+      final m = ic.consultantMobile.value;
+      final e = ic.consultantEmail.value;
+      final actions = <Widget>[
+        if (m.isNotEmpty)
+          _Action(icon: Ic.phone, label: 'Call', color: AppColors.teal, onTap: () => _open(Uri(scheme: 'tel', path: _digits(m)))),
+        if (m.isNotEmpty)
+          _Action(
+              icon: Ic.whatsapp,
+              label: 'WhatsApp',
+              color: const Color(0xFF7EE0A8),
+              onTap: () => _open(Uri.parse('https://wa.me/${_waNumber(m)}'))),
+        if (e.isNotEmpty)
+          _Action(icon: Ic.mail, label: 'Email', color: AppColors.sun, onTap: () => _open(Uri(scheme: 'mailto', path: e))),
+      ];
+      if (actions.isEmpty) return const SizedBox.shrink();
+      return Row(
+        children: [
+          for (var i = 0; i < actions.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            Expanded(child: actions[i]),
+          ],
+        ],
+      );
+    });
+  }
+}
 
-    return GestureDetector(
-      onTap: () => setState(() => _open = !_open),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: const Cubic(.22, 1, .36, 1),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: _open
-              ? AppColors.sun.withValues(alpha: 0.06)
-              : AppColors.card,
-          border: Border.all(
-              color: _open
-                  ? AppColors.sun.withValues(alpha: 0.2)
-                  : AppColors.line),
+class _Action extends StatelessWidget {
+  final String icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _Action({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Glass(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        radius: 20,
+        child: Column(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: 0.15)),
+              alignment: Alignment.center,
+              child: StrokeIcon(icon, color: color, size: 19),
+            ),
+            const SizedBox(height: 8),
+            Text(label, style: T.small.copyWith(color: AppColors.tx, fontWeight: FontWeight.w600)),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _AboutCard extends StatelessWidget {
+  const _AboutCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final ic = Get.find<InfoController>();
+    return Obx(() {
+      final d = ic.consultantDescription.value;
+      if (ic.consultantStatus.value != LoadStatus.ok || d.isEmpty) return const SizedBox.shrink();
+      return Glass(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(q,
-                      style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.tx)),
-                ),
-                AnimatedRotation(
-                  turns: _open ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: Icon(Icons.expand_more,
-                      color: _open ? AppColors.sun : AppColors.tx3,
-                      size: 20),
-                ),
-              ],
+            const CardHeader('About'),
+            const SizedBox(height: 10),
+            Text(d, style: T.muted),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _ContactCard extends StatelessWidget {
+  const _ContactCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final ic = Get.find<InfoController>();
+    return Obx(() {
+      if (ic.consultantStatus.value != LoadStatus.ok) return const SizedBox.shrink();
+      final rows = <(String, String, String)>[
+        if (ic.consultantMobile.value.isNotEmpty) (Ic.phone, 'Mobile', ic.consultantMobile.value),
+        if (ic.consultantEmail.value.isNotEmpty) (Ic.mail, 'Email', ic.consultantEmail.value),
+        if (ic.consultantAddress.value.isNotEmpty) (Ic.pin, 'Office', ic.consultantAddress.value),
+      ];
+      if (rows.isEmpty) return const SizedBox.shrink();
+      return Glass(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+        child: Column(
+          children: [
+            for (var i = 0; i < rows.length; i++)
+              _KvRow(icon: rows[i].$1, label: rows[i].$2, value: rows[i].$3, last: i == rows.length - 1),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _KvRow extends StatelessWidget {
+  final String icon, label, value;
+  final bool last;
+  final VoidCallback? onTap;
+  final bool chevron;
+  const _KvRow({
+    required this.icon,
+    required this.label,
+    this.value = '',
+    this.last = false,
+    this.onTap,
+    this.chevron = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      pressedScale: 0.985,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          border: last ? null : Border(bottom: BorderSide(color: AppColors.line)),
+        ),
+        child: Row(
+          children: [
+            StrokeIcon(icon, color: AppColors.tx3, size: 17),
+            const SizedBox(width: 12),
+            Text(label, style: T.muted),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(value,
+                  textAlign: TextAlign.right,
+                  style: T.label.copyWith(fontSize: 14),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis),
             ),
-            if (_open) ...[
-              const SizedBox(height: 10),
-              Text(a,
-                  style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.tx2,
-                      height: 1.55)),
+            if (chevron) ...[
+              const SizedBox(width: 6),
+              const StrokeIcon(Ic.chevRight, color: AppColors.tx3, size: 16),
             ],
           ],
         ),
       ),
     );
+  }
+}
+
+class _YouCard extends StatelessWidget {
+  const _YouCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Get.find<ProfileController>();
+    return Obx(() {
+      final name = p.displayName;
+      return Pressable(
+        onTap: () => Get.toNamed(AppRoutes.profile),
+        child: Glass(
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [AppColors.vio, AppColors.teal]),
+                ),
+                alignment: Alignment.center,
+                child: name.isEmpty
+                    ? const StrokeIcon(Ic.user, color: Colors.white, size: 20)
+                    : Text(name[0].toUpperCase(), style: T.h3.copyWith(color: Colors.white)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('YOU', style: T.cap),
+                    const SizedBox(height: 4),
+                    Text(name.isEmpty ? 'Your profile' : name, style: T.strong),
+                    if (p.mobile.value.isNotEmpty) Text(p.mobile.value, style: T.small),
+                  ],
+                ),
+              ),
+              const StrokeIcon(Ic.chevRight, color: AppColors.tx3, size: 18),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _LinksCard extends StatelessWidget {
+  const _LinksCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Glass(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+      child: Column(
+        children: [
+          _KvRow(
+              icon: Ic.book,
+              label: 'How to read your planner',
+              chevron: true,
+              onTap: () => Get.toNamed(AppRoutes.guidelines)),
+          _KvRow(icon: Ic.help, label: 'FAQ', chevron: true, onTap: () => Get.toNamed(AppRoutes.faq)),
+          _KvRow(
+              icon: Ic.shield,
+              label: 'Terms & conditions',
+              chevron: true,
+              last: true,
+              onTap: () => _open(Uri.parse(ApiConstants.termsUrl))),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignOut extends StatelessWidget {
+  const _SignOut();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Pressable(
+        onTap: () => _confirm(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const StrokeIcon(Ic.logout, color: AppColors.rose, size: 17),
+              const SizedBox(width: 8),
+              Text('Sign out', style: T.strong.copyWith(color: AppColors.rose, fontSize: 14)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirm(BuildContext context) {
+    showGlassSheet(context, builder: (ctx) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Sign out?', style: T.h2),
+          const SizedBox(height: 8),
+          Text('You\'ll need your mobile number and OTP to sign back in.', style: T.muted),
+          const SizedBox(height: 22),
+          PrimaryButton(
+            label: 'Sign out',
+            onTap: () {
+              Navigator.of(ctx).pop();
+              Get.find<HomeController>().logout();
+            },
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Cancel', style: T.strong.copyWith(color: AppColors.tx2)),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }

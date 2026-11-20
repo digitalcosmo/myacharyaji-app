@@ -25,7 +25,9 @@ jobs:
           cache: true
 
       - name: Generate platform folders (repo only tracks lib/)
-        run: flutter create . --project-name myacharyaji --org com.cosmoguru --platforms=android,ios,web
+        run: |
+          flutter create . --project-name myacharyaji --org com.cosmoguru --platforms=android,ios,web
+          rm -rf test
 
       - name: Pub get
         run: flutter pub get
@@ -34,7 +36,7 @@ jobs:
         id: analyze
         run: |
           set +e
-          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1
+          flutter analyze lib --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1
           echo "code=$?" >> "$GITHUB_OUTPUT"
           cat analyze.txt
 
@@ -61,10 +63,14 @@ jobs:
             echo "analyze_exit: ${{ steps.analyze.outputs.code }}"
             echo "apk_exit: ${{ steps.apk.outputs.code }}"
             flutter --version
-            echo "===== ANALYZE ====="
-            cat analyze.txt
+            echo "===== ANALYZE (errors + warnings) ====="
+            grep -E "^\s*(error|warning)" analyze.txt || echo "none"
+            echo "===== ANALYZE (info count) ====="
+            grep -cE "^\s*info" analyze.txt || true
+            echo "===== BUILD (errors) ====="
+            grep -nE "Error|error:|FAILURE|What went wrong" -A3 build.txt | head -80 || true
             echo "===== BUILD (tail) ====="
-            tail -60 build.txt
+            tail -25 build.txt
           } > /tmp/ci-report.txt
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"

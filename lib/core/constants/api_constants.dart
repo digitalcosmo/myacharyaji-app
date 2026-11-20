@@ -1,8 +1,7 @@
-/// API endpoints — swap `useMock` to false and update `baseUrl` to go live.
+/// CosmoKundli API endpoints (same contracts as the original MyAcharya app).
 class ApiConstants {
   ApiConstants._();
 
-  static const bool useMock = false;
   static const String baseUrl = 'https://software.cosmokundli.com/API/';
 
   // Auth
@@ -21,9 +20,11 @@ class ApiConstants {
   static const String appDetails = 'AppDetails';
   static const String consultantDetails = 'ConsultanttDetails';
 
-  // Reports & Predictions
+  // Planner (CV Planner 5D)
   static const String monthlyData = 'GetMonthData_Ach';
   static const String weeklyData = 'GetWeekData_Ach';
   static const String dailyData = 'GetDailyData_Ach';
   static const String reportList = 'GetReportList_Ach';
+
+  static const String termsUrl = 'https://cosmoguru.com/terms-condition';
 }

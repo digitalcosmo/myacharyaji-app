@@ -1,49 +1,42 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../core/network/api_repository.dart';
 import '../core/storage/user_data.dart';
+import '../routes/app_routes.dart';
+import 'info_controller.dart';
+import 'planner_controller.dart';
+import 'profile_controller.dart';
+import 'report_controller.dart';
 
+/// Bottom-tab navigation and session actions.
 class HomeController extends GetxController {
-  final ApiRepository _repo = ApiRepository();
+  static const tabToday = 0;
+  static const tabReports = 1;
+  static const tabPlanner = 2;
+  static const tabAcharyaji = 3;
 
   final currentNavIndex = 0.obs;
-  final selectedRashi = 0.obs;
-  final isLoading = false.obs;
-  final generalPrediction = ''.obs;
 
-  final rashiList = [
-    'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-    'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
-  ];
+  /// Bumped on every tab switch; tabs key their content on it so entrance
+  /// animations replay each time a tab is opened (as in the prototype).
+  final visit = 0.obs;
 
-  String get selectedRashiName => rashiList[selectedRashi.value];
-
-  void changeNav(int index) => currentNavIndex.value = index;
-
-  void selectRashi(int index) {
-    selectedRashi.value = index;
-    fetchGeneralPrediction();
-  }
-
-  Future<void> fetchGeneralPrediction() async {
-    try {
-      isLoading.value = true;
-      final result = await _repo.getGeneralPrediction({
-        'rashi': selectedRashiName,
-        'date': DateTime.now().toIso8601String().split('T')[0],
-      });
-      isLoading.value = false;
-      if (result['status'] == true) {
-        generalPrediction.value = result['prediction'] ?? '';
-      }
-    } catch (e) {
-      isLoading.value = false;
-      debugPrint('General prediction error: $e');
-    }
+  void changeNav(int index) {
+    if (index == currentNavIndex.value) return;
+    currentNavIndex.value = index;
+    visit.value++;
   }
 
   Future<void> logout() async {
     await UserData.clear();
-    Get.offAllNamed('/login');
+    Get.offAllNamed(AppRoutes.login);
+    // Drop every per-user controller so the next sign-in starts clean
+    // (registered with fenix: true, so they are rebuilt on next use).
+    // Wait for the home route's exit transition before removing them.
+    Future.delayed(const Duration(milliseconds: 700), () {
+      Get.delete<PlannerController>(force: true);
+      Get.delete<ReportController>(force: true);
+      Get.delete<ProfileController>(force: true);
+      Get.delete<InfoController>(force: true);
+      currentNavIndex.value = tabToday;
+    });
   }
 }

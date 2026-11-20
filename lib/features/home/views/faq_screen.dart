@@ -1,44 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../controllers/info_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../models/load_result.dart';
+import '../../../ui/glass.dart';
+import '../../../ui/motion.dart';
+import '../../../ui/states.dart';
+import '../../../ui/stroke_icon.dart';
+import '../../../ui/sub_page.dart';
+import '../../../ui/tokens.dart';
+import 'guidelines_screen.dart';
 
-class FaqScreen extends StatelessWidget {
+class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final c = Get.find<InfoController>();
-    c.loadFAQs();
+  State<FaqScreen> createState() => _FaqScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('FAQ')),
-      body: Obx(() {
-        if (c.isLoading.value) return const Center(child: CircularProgressIndicator());
-        if (c.faqList.isEmpty) return Center(child: Text('No FAQs available', style: GoogleFonts.poppins(color: AppColors.textMuted)));
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: c.faqList.length,
-          itemBuilder: (_, i) {
-            final f = c.faqList[i];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ExpansionTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                title: Text(f['question'] ?? '', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(f['answer'] ?? '', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary, height: 1.5)),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      }),
+class _FaqScreenState extends State<FaqScreen> {
+  final c = Get.find<InfoController>();
+
+  @override
+  void initState() {
+    super.initState();
+    c.loadFAQs();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final st = c.faqStatus.value;
+      final list = c.faqList.toList();
+      List<Widget> children;
+      if (st == LoadStatus.loading) {
+        children = [for (var i = 0; i < 4; i++) const Glass(child: Skeleton(height: 18))];
+      } else if (st == LoadStatus.error) {
+        children = [Glass(child: InlineNotice.error('Couldn\'t load the FAQ.', c.loadFAQs))];
+      } else if (list.isEmpty) {
+        children = [Glass(child: Text('No questions have been published yet.', style: T.muted))];
+      } else {
+        children = [
+          for (final f in list) _FaqItem(q: '${f['question'] ?? ''}', a: '${f['answer'] ?? ''}'),
+        ];
+      }
+      return SubPage(title: 'FAQ', onRefresh: c.loadFAQs, children: children);
+    });
+  }
+}
+
+class _FaqItem extends StatefulWidget {
+  final String q, a;
+  const _FaqItem({required this.q, required this.a});
+
+  @override
+  State<_FaqItem> createState() => _FaqItemState();
+}
+
+class _FaqItemState extends State<_FaqItem> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      pressedScale: 0.99,
+      onTap: () => setState(() => _open = !_open),
+      child: Glass(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(widget.q, style: T.strong)),
+                const SizedBox(width: 10),
+                AnimatedRotation(
+                  turns: _open ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 350),
+                  curve: kEase,
+                  child: const StrokeIcon(Ic.chevDown, color: AppColors.tx2, size: 16),
+                ),
+              ],
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 380),
+              curve: kEase,
+              alignment: Alignment.topCenter,
+              child: _open
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: simpleHtml(widget.a)),
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

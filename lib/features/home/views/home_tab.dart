@@ -1,17 +1,50 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../controllers/home_controller.dart';
-import '../../../controllers/prediction_controller.dart';
+import '../../../controllers/planner_controller.dart';
+import '../../../controllers/profile_controller.dart';
+import '../../../controllers/rashi_controller.dart';
 import '../../../controllers/report_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/dates.dart';
+import '../../../models/five_d.dart';
+import '../../../routes/app_routes.dart';
+import '../../../ui/controls.dart';
+import '../../../ui/dim_bars.dart';
+import '../../../ui/glass.dart';
+import '../../../ui/motion.dart';
+import '../../../ui/score_ring.dart';
+import '../../../ui/states.dart';
+import '../../../ui/stroke_icon.dart';
+import '../../../ui/tab_page.dart';
+import '../../../ui/tokens.dart';
 
+/// Today: general rashi 5D for yesterday / today / tomorrow, plus a
+/// shortcut to the client's own planner reading for today.
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
 
-  String _greet() {
+  @override
+  Widget build(BuildContext context) {
+    final rashi = Get.find<RashiController>();
+    return TabPage(
+      onRefresh: () async => rashi.retry(),
+      children: const [
+        _Header(),
+        _RashiPicker(),
+        _DaySwitch(),
+        _RashiReading(),
+        _MyPlannerToday(),
+      ],
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header();
+
+  String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
@@ -20,482 +53,323 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final home = Get.find<HomeController>();
-    final pred = Get.find<PredictionController>();
-    final report = Get.find<ReportController>();
-    final now = DateTime.now();
-    final dayStr = DateFormat('EEE, d MMMM').format(now);
-
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-        children: [
-          // ── Top bar ──
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(dayStr,
-                        style: GoogleFonts.inter(
-                            fontSize: 12, color: AppColors.tx3)),
-                    const SizedBox(height: 4),
-                    Obx(() => Text(
-                          '${_greet()}, ${report.selectedName.value.isNotEmpty ? report.selectedName.value.split(' ').first : 'there'}',
-                          style: GoogleFonts.spaceGrotesk(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.tx),
-                        )),
-                  ],
-                ),
-              ),
-              _IconButton(
-                icon: Icons.notifications_outlined,
-                onTap: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // ── Rashi forecast label ──
-          Text(
-              'RASHI FORECAST · ${DateFormat('MMMM').format(now).toUpperCase()}',
-              style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.tx3,
-                  letterSpacing: 1.4)),
-          const SizedBox(height: 6),
-          Text('Pick your moon sign to see this month\'s 5D outlook.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.tx2)),
-          const SizedBox(height: 14),
-
-          // ── Rashi scroller ──
-          SizedBox(
-            height: 96,
-            child: Obx(() => ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 12,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final sel = home.selectedRashi.value == i;
-                    return GestureDetector(
-                      onTap: () {
-                        home.selectRashi(i);
-                        Get.toNamed('/rashi-prediction', arguments: i);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 350),
-                        curve: const Cubic(.22, 1, .36, 1),
-                        width: 78,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: sel
-                              ? null
-                              : AppColors.card,
-                          gradient: sel
-                              ? LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    AppColors.sun.withValues(alpha: 0.25),
-                                    AppColors.sun.withValues(alpha: 0.08),
-                                  ],
-                                )
-                              : null,
-                          border: Border.all(
-                              color: sel
-                                  ? AppColors.sun.withValues(alpha: 0.5)
-                                  : AppColors.line),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              AppColors.rashiSymbols[i],
-                              style: TextStyle(
-                                  fontSize: 26,
-                                  color:
-                                      sel ? AppColors.sun : AppColors.tx2),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              AppColors.rashiNames[i],
-                              style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: sel
-                                      ? AppColors.sun2
-                                      : AppColors.tx2),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                )),
-          ),
-          const SizedBox(height: 18),
-
-          // ── Selected rashi card with 5D bars ──
-          Obx(() {
-            final sel = home.selectedRashi.value;
-            final loading = pred.isLoading.value;
-            // Read all reactive dimension values to ensure GetX tracks them
-            final c = pred.career.value;
-            final f = pred.finance.value;
-            final h = pred.health.value;
-            final s = pred.social.value;
-            final l = pred.love.value;
-            final dims = [
-              {'label': 'Career', 'key': 'career', 'score': c},
-              {'label': 'Finance', 'key': 'finance', 'score': f},
-              {'label': 'Health', 'key': 'health', 'score': h},
-              {'label': 'Social', 'key': 'social', 'score': s},
-              {'label': 'Love', 'key': 'love', 'score': l},
-            ];
-            return _GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: AppColors.sun.withValues(alpha: 0.14),
-                        ),
-                        child: Center(
-                          child: Text(AppColors.rashiSymbols[sel],
-                              style: const TextStyle(
-                                  fontSize: 28, color: AppColors.sun2)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(AppColors.rashiNames[sel],
-                              style: GoogleFonts.spaceGrotesk(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.tx)),
-                          Text('5D outlook this month',
-                              style: GoogleFonts.inter(
-                                  fontSize: 12, color: AppColors.tx3)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  if (loading)
-                    const Center(
-                        child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(
-                                color: AppColors.sun)))
-                  else
-                    ...dims.map((d) => _DimBarRow(
-                          label: d['label'] as String,
-                          dimKey: d['key'] as String,
-                          score: d['score'] as int,
-                          color: AppColors.dimensionColor[d['key']] ??
-                              AppColors.sun,
-                        )),
-                ],
-              ),
-            );
-          }),
-          const SizedBox(height: 18),
-
-          // ── CTA card ──
-          _GlassCard(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.vio.withValues(alpha: 0.16),
-                AppColors.teal.withValues(alpha: 0.06)
-              ],
-            ),
-            borderColor: AppColors.vio.withValues(alpha: 0.3),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Obx(() => Text(
-                    'This is general, for every ${AppColors.rashiNames[home.selectedRashi.value]}',
-                    style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.tx))),
-                const SizedBox(height: 6),
-                Text(
-                  'Your personal Sentiments, Situations and 5D come from your own birth chart. Your Acharyaji can prepare them for you.',
-                  style: GoogleFonts.inter(
-                      fontSize: 13, color: AppColors.tx2, height: 1.5),
-                ),
-                const SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () => Get.find<HomeController>().changeNav(3),
-                  child: Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                          color: AppColors.sun.withValues(alpha: 0.5)),
-                      color: AppColors.sun.withValues(alpha: 0.08),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Ask your Acharyaji',
-                            style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.sun2)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Members section ──
-          Obx(() {
-            if (report.reportList.isEmpty) return const SizedBox.shrink();
+    final p = Get.find<ProfileController>();
+    return Row(
+      children: [
+        Expanded(
+          child: Obx(() {
+            final first = p.firstName.value.trim();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('YOUR MEMBERS',
-                    style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.tx3,
-                        letterSpacing: 1.4)),
-                const SizedBox(height: 12),
-                ...report.reportList.map((r) => _MemberTile(member: r)),
+                Text(DateFormat('EEEE, d MMMM').format(DateTime.now()).toUpperCase(), style: T.cap),
+                const SizedBox(height: 8),
+                Text(first.isEmpty ? _greeting() : '${_greeting()},\n$first', style: T.h1),
               ],
             );
           }),
-        ],
-      ),
-    );
-  }
-}
-
-/// Glass-morphism card matching prototype's .card with backdrop-filter:blur(14px)
-class _GlassCard extends StatelessWidget {
-  final Widget child;
-  final Gradient? gradient;
-  final Color? borderColor;
-  const _GlassCard({required this.child, this.gradient, this.borderColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: gradient == null ? AppColors.card : null,
-            gradient: gradient,
-            border: Border.all(color: borderColor ?? AppColors.line),
-          ),
-          child: child,
         ),
-      ),
+        Pressable(
+          onTap: () => Get.toNamed(AppRoutes.profile),
+          child: Obx(() {
+            final n = p.displayName.trim();
+            return Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(colors: [AppColors.vio, AppColors.teal]),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              alignment: Alignment.center,
+              child: n.isEmpty
+                  ? const StrokeIcon(Ic.user, color: Colors.white, size: 20)
+                  : Text(n[0].toUpperCase(), style: T.h3.copyWith(color: Colors.white)),
+            );
+          }),
+        ),
+      ],
     );
   }
 }
 
-/// Dimension bar row matching prototype's .bar-row
-class _DimBarRow extends StatelessWidget {
-  final String label;
-  final String dimKey;
-  final int score;
-  final Color color;
-  const _DimBarRow(
-      {required this.label,
-      required this.dimKey,
-      required this.score,
-      required this.color});
+class _RashiPicker extends StatefulWidget {
+  const _RashiPicker();
+  @override
+  State<_RashiPicker> createState() => _RashiPickerState();
+}
 
-  static const _dimIcons = {
-    'career': Icons.work_outline,
-    'finance': Icons.attach_money,
-    'social': Icons.people_outline,
-    'health': Icons.favorite_border,
-    'love': Icons.volunteer_activism_outlined,
-  };
+class _RashiPickerState extends State<_RashiPicker> {
+  final _scroll = ScrollController();
+  static const _w = 78.0, _gap = 10.0;
+  late final Worker _w1;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = Get.find<RashiController>();
+    _w1 = ever<int>(c.selected, (i) => _center(i));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _center(c.selected.value, animate: false));
+  }
+
+  void _center(int i, {bool animate = true}) {
+    if (!_scroll.hasClients) return;
+    final vw = _scroll.position.viewportDimension;
+    final target = (i * (_w + _gap) - (vw - _w) / 2)
+        .clamp(0.0, _scroll.position.maxScrollExtent);
+    if (animate) {
+      _scroll.animateTo(target, duration: const Duration(milliseconds: 500), curve: kEase);
+    } else {
+      _scroll.jumpTo(target);
+    }
+  }
+
+  @override
+  void dispose() {
+    _w1.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          // Dimension icon
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(9),
-              color: color.withValues(alpha: 0.15),
-            ),
-            child: Icon(
-              _dimIcons[dimKey] ?? Icons.star_outline,
-              size: 15,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 60,
-            child: Text(label,
-                style: GoogleFonts.inter(fontSize: 13, color: AppColors.tx2)),
-          ),
-          Expanded(
-            child: Container(
-              height: 10,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(5),
-                color: Colors.white.withValues(alpha: 0.07),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: score / 100,
-                child: Container(
+    final c = Get.find<RashiController>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('YOUR RASHI', style: T.cap),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 98,
+          child: ListView.separated(
+            controller: _scroll,
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            itemCount: kRashis.length,
+            separatorBuilder: (_, __) => const SizedBox(width: _gap),
+            itemBuilder: (_, i) => Obx(() {
+              final sel = c.selected.value == i;
+              final r = kRashis[i];
+              return Pressable(
+                onTap: () => c.selectRashi(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 350),
+                  curve: kEase,
+                  width: _w,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    color: color,
+                    borderRadius: BorderRadius.circular(20),
+                    color: sel ? AppColors.sun.withValues(alpha: 0.16) : AppColors.card,
+                    border: Border.all(
+                        color: sel ? AppColors.sun.withValues(alpha: 0.6) : AppColors.line),
+                    boxShadow: sel
+                        ? [BoxShadow(color: AppColors.sun.withValues(alpha: 0.22), blurRadius: 18)]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 350),
+                        style: TextStyle(
+                          fontSize: 26,
+                          height: 1,
+                          color: sel ? AppColors.sun2 : AppColors.tx2,
+                        ),
+                        child: Text(r.symbol),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(r.name,
+                          style: T.small.copyWith(
+                              fontSize: 12,
+                              color: sel ? AppColors.tx : AppColors.tx2,
+                              fontWeight: FontWeight.w600)),
+                    ],
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
           ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 36,
-            child: Text('$score',
-                textAlign: TextAlign.right,
-                style: GoogleFonts.spaceGrotesk(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.tx)),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _MemberTile extends StatelessWidget {
-  final Map<String, dynamic> member;
-  const _MemberTile({required this.member});
+class _DaySwitch extends StatelessWidget {
+  const _DaySwitch();
 
   @override
   Widget build(BuildContext context) {
-    final name = member['Name'] ?? '';
-    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final c = Get.find<RashiController>();
+    return Obx(() => Segmented(
+          labels: const ['Yesterday', 'Today', 'Tomorrow'],
+          index: c.offset.value + 1,
+          onChanged: (i) => c.setOffset(i - 1),
+        ));
+  }
+}
 
-    return GestureDetector(
-      onTap: () {
-        final rc = Get.find<ReportController>();
-        final idx = rc.reportList.indexOf(member);
-        if (idx >= 0) rc.selectMember(idx);
-        Get.find<HomeController>().changeNav(2);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: AppColors.card,
-          border: Border.all(color: AppColors.line),
-        ),
-        child: Row(
+class _RashiReading extends StatelessWidget {
+  const _RashiReading();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Get.find<RashiController>();
+    return Obx(() {
+      final r = c.rashi;
+      final res = c.current;
+      return Glass(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Conic gradient avatar like prototype
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: const SweepGradient(
-                  startAngle: 3.5,
-                  colors: [
-                    AppColors.sun,
-                    AppColors.sun2,
-                    AppColors.rose,
-                    AppColors.sun,
-                  ],
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${r.name} · ${r.english}', style: T.h3),
+                      const SizedBox(height: 4),
+                      Text('General 5D for ${fmtDayLong(c.date)}', style: T.small),
+                    ],
+                  ),
                 ),
-              ),
-              child: Center(
-                child: Text(
-                  initials,
-                  style: GoogleFonts.spaceGrotesk(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1A1205)),
-                ),
+                Text(r.symbol, style: const TextStyle(fontSize: 30, color: AppColors.sun2)),
+              ],
+            ),
+            const SizedBox(height: 18),
+            ResultSwitch(
+              result: res,
+              onRetry: c.retry,
+              loading: const Column(children: [
+                Center(child: Skeleton(height: 112, width: 112, radius: 56)),
+                SizedBox(height: 22),
+                DimBarsSkeleton(),
+              ]),
+              builder: (ok) => _Reading(
+                key: ValueKey('${r.apiName}${c.offset.value}'),
+                data: ok.data!,
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _Reading extends StatelessWidget {
+  final FiveD data;
+  const _Reading({super.key, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final avg = data.average;
+    final tone = toneOf(avg);
+    // Strongest and weakest areas, so the reading says something.
+    final sorted = [...kDims]..sort((a, b) => data.of(b.key).compareTo(data.of(a.key)));
+    final best = sorted.first, low = sorted.last;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            ScoreRing(
+              value: avg,
+              caption: 'overall',
+              colors: [toneColor(tone).withValues(alpha: 0.6), toneColor(tone)],
+            ),
+            const SizedBox(width: 18),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.tx),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  Text('${member['Duration'] ?? ''} months',
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: AppColors.tx3)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: toneColor(tone).withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(toneLabel(tone).toUpperCase(),
+                        style: T.cap.copyWith(color: toneColor(tone), letterSpacing: 1.2)),
+                  ),
+                  const SizedBox(height: 10),
+                  Text.rich(
+                    TextSpan(style: T.muted.copyWith(fontSize: 13.5), children: [
+                      const TextSpan(text: 'Strongest: '),
+                      TextSpan(text: best.label, style: TextStyle(color: best.color, fontWeight: FontWeight.w700)),
+                      const TextSpan(text: '\nGo gently with: '),
+                      TextSpan(text: low.label, style: TextStyle(color: low.color, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.tx3, size: 20),
           ],
         ),
-      ),
+        const SizedBox(height: 22),
+        DimBars(data),
+      ],
     );
   }
 }
 
-class _IconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconButton({required this.icon, required this.onTap});
+/// Personal planner reading for today, when a report covers today.
+class _MyPlannerToday extends StatelessWidget {
+  const _MyPlannerToday();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.line),
-          color: AppColors.card,
+    final reports = Get.find<ReportController>();
+    final planner = Get.find<PlannerController>();
+    final home = Get.find<HomeController>();
+    return Obx(() {
+      final rep = reports.selected.value;
+      if (rep == null || !rep.coversToday) return const SizedBox.shrink();
+      final res = planner.dailyOf(today());
+      return Pressable(
+        onTap: () {
+          planner.openDay(today());
+          home.changeNav(HomeController.tabPlanner);
+        },
+        child: Glass(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.vio.withValues(alpha: 0.16), AppColors.card],
+          ),
+          borderColor: AppColors.vio.withValues(alpha: 0.3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CardHeader('Your planner today',
+                  trailing: const StrokeIcon(Ic.chevRight, color: AppColors.tx3, size: 18)),
+              const SizedBox(height: 4),
+              Text(rep.name, style: T.small),
+              const SizedBox(height: 16),
+              ResultSwitch(
+                result: res,
+                onRetry: () => planner.ensureDaily(today(), force: true),
+                loading: const Skeleton(height: 44),
+                builder: (ok) => Row(
+                  children: [
+                    for (final d in kDims)
+                      Expanded(
+                        child: Column(
+                          children: [
+                            DimBadge(d, size: 30),
+                            const SizedBox(height: 8),
+                            AnimatedPercent(value: ok.data!.of(d.key), style: T.pct.copyWith(fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Icon(icon, color: AppColors.tx, size: 20),
-      ),
-    );
+      );
+    });
   }
 }
