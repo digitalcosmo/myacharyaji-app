@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -102,7 +103,11 @@ class ReportsTab extends StatelessWidget {
 class _NewBannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
@@ -143,6 +148,8 @@ class _NewBannerCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    ),
       ),
     );
   }
@@ -204,7 +211,11 @@ class _ReportCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => Get.toNamed('/report-reader', arguments: {'type': key}),
-      child: Container(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -301,6 +312,8 @@ class _ReportCard extends StatelessWidget {
             Icon(Icons.chevron_right,
                 color: AppColors.tx3.withValues(alpha: 0.6), size: 20),
           ],
+        ),
+      ),
         ),
       ),
     );

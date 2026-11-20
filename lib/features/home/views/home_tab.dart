@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -289,7 +290,7 @@ class HomeTab extends StatelessWidget {
   }
 }
 
-/// Glass-morphism card matching prototype's .card class
+/// Glass-morphism card matching prototype's .card with backdrop-filter:blur(14px)
 class _GlassCard extends StatelessWidget {
   final Widget child;
   final Gradient? gradient;
@@ -298,15 +299,21 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: gradient == null ? AppColors.card : null,
-        gradient: gradient,
-        border: Border.all(color: borderColor ?? AppColors.line),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: gradient == null ? AppColors.card : null,
+            gradient: gradient,
+            border: Border.all(color: borderColor ?? AppColors.line),
+          ),
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 }

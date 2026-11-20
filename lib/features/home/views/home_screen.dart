@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -90,7 +91,9 @@ class _FloatingTabBar extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(26),
-        child: Stack(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: Stack(
           children: [
             // Animated pill indicator
             AnimatedPositioned(
@@ -149,6 +152,7 @@ class _FloatingTabBar extends StatelessWidget {
               }),
             ),
           ],
+        ),
         ),
       ),
     );

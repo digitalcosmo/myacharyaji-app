@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -202,10 +203,14 @@ class _OverallScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final score = pc.overallScore;
     final zone = AppColors.zoneOf(score);
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -270,6 +275,8 @@ class _OverallScoreCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    ),
       ),
     );
   }
@@ -610,7 +617,11 @@ class _SentimentCard extends StatelessWidget {
     final color = AppColors
             .dimensionColor[dim.toString().toLowerCase()] ??
         AppColors.sun;
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -652,6 +663,8 @@ class _SentimentCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
+      ),
     );
   }
 }
@@ -666,7 +679,11 @@ class _SituationCard extends StatelessWidget {
     final zi = zoneVal is num ? AppColors.zoneOf(zoneVal) : null;
     final zoneColor = zi?.color ?? AppColors.tx3;
     final zoneName = zi?.name ?? '$zoneVal';
-    return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -714,6 +731,8 @@ class _SituationCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis),
           ],
         ],
+      ),
+    ),
       ),
     );
   }
