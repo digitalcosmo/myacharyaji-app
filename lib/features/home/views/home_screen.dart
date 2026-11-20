@@ -19,7 +19,15 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final home = Get.find<HomeController>();
 
-    return Scaffold(
+    final topInset = MediaQuery.of(context).padding.top;
+
+    // Android back: go to Today first, only then leave the app.
+    return Obx(() => PopScope(
+          canPop: home.currentNavIndex.value == HomeController.tabToday,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) home.changeNav(HomeController.tabToday);
+          },
+          child: Scaffold(
       backgroundColor: AppColors.bg,
       extendBody: true,
       body: BackdropGroup(
@@ -28,6 +36,26 @@ class HomeScreen extends StatelessWidget {
             const Positioned.fill(child: CosmicBackground()),
             Positioned.fill(
               child: Obx(() => _TabSwitcher(index: home.currentNavIndex.value)),
+            ),
+            // Scrim behind the status bar so scrolled content doesn't
+            // collide with the clock and icons.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: topInset + 28,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.bg, AppColors.bg.withValues(alpha: 0.85), AppColors.bg.withValues(alpha: 0)],
+                      stops: const [0, 0.55, 1],
+                    ),
+                  ),
+                ),
+              ),
             ),
             Positioned(
               left: 14,
@@ -41,7 +69,8 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+        ));
   }
 }
 

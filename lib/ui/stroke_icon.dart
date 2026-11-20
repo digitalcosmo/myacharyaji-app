@@ -31,7 +31,7 @@ class StrokeIcon extends StatelessWidget {
     final svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
         'stroke="${_hex(color)}" stroke-opacity="${color.a.toStringAsFixed(3)}" '
         'stroke-width="$strokeWidth" stroke-linecap="round" stroke-linejoin="round">'
-        '$extra<path d="$path"/></svg>';
+        '$extra${path.startsWith('<') ? path : '<path d="$path"/>'}</svg>';
     return SvgPicture.string(svg, width: size, height: size);
   }
 }

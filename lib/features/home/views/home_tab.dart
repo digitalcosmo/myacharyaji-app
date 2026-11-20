@@ -9,12 +9,13 @@ import '../../../controllers/report_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/dates.dart';
 import '../../../models/five_d.dart';
+import '../../../models/zone.dart';
 import '../../../routes/app_routes.dart';
 import '../../../ui/controls.dart';
 import '../../../ui/dim_bars.dart';
 import '../../../ui/glass.dart';
 import '../../../ui/motion.dart';
-import '../../../ui/score_ring.dart';
+import '../../../ui/zone_icon.dart';
 import '../../../ui/states.dart';
 import '../../../ui/stroke_icon.dart';
 import '../../../ui/tab_page.dart';
@@ -168,15 +169,7 @@ class _RashiPickerState extends State<_RashiPicker> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 350),
-                        style: TextStyle(
-                          fontSize: 26,
-                          height: 1,
-                          color: sel ? AppColors.sun2 : AppColors.tx2,
-                        ),
-                        child: Text(r.symbol),
-                      ),
+                      StrokeIcon(r.icon, color: sel ? AppColors.sun2 : AppColors.tx2, size: 28, strokeWidth: 1.7),
                       const SizedBox(height: 8),
                       Text(r.name,
                           style: T.small.copyWith(
@@ -234,7 +227,8 @@ class _RashiReading extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text(r.symbol, style: const TextStyle(fontSize: 30, color: AppColors.sun2)),
+                StrokeIcon(r.icon, color: AppColors.sun2, size: 30, strokeWidth: 1.6),
+                const ZoneInfoButton(),
               ],
             ),
             const SizedBox(height: 18),
@@ -242,7 +236,11 @@ class _RashiReading extends StatelessWidget {
               result: res,
               onRetry: c.retry,
               loading: const Column(children: [
-                Center(child: Skeleton(height: 112, width: 112, radius: 56)),
+                Row(children: [
+                  Expanded(child: Skeleton(height: 92, radius: 16)),
+                  SizedBox(width: 10),
+                  Expanded(child: Skeleton(height: 92, radius: 16)),
+                ]),
                 SizedBox(height: 22),
                 DimBarsSkeleton(),
               ]),
@@ -264,52 +262,63 @@ class _Reading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avg = data.average;
-    final tone = toneOf(avg);
-    // Strongest and weakest areas, so the reading says something.
+    // Highest and lowest dimension: something concrete to act on, without
+    // collapsing five different measures into one meaningless average.
     final sorted = [...kDims]..sort((a, b) => data.of(b.key).compareTo(data.of(a.key)));
     final best = sorted.first, low = sorted.last;
+    final flat = data.of(best.key).round() == data.of(low.key).round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            ScoreRing(
-              value: avg,
-              caption: 'overall',
-              colors: [toneColor(tone).withValues(alpha: 0.6), toneColor(tone)],
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: toneColor(tone).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(toneLabel(tone).toUpperCase(),
-                        style: T.cap.copyWith(color: toneColor(tone), letterSpacing: 1.2)),
-                  ),
-                  const SizedBox(height: 10),
-                  Text.rich(
-                    TextSpan(style: T.muted.copyWith(fontSize: 13.5), children: [
-                      const TextSpan(text: 'Strongest: '),
-                      TextSpan(text: best.label, style: TextStyle(color: best.color, fontWeight: FontWeight.w700)),
-                      const TextSpan(text: '\nGo gently with: '),
-                      TextSpan(text: low.label, style: TextStyle(color: low.color, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 22),
+        if (!flat) ...[
+          Row(
+            children: [
+              Expanded(child: _Highlight(title: 'Best area', dim: best, value: data.of(best.key))),
+              const SizedBox(width: 10),
+              Expanded(child: _Highlight(title: 'Take care with', dim: low, value: data.of(low.key))),
+            ],
+          ),
+          const SizedBox(height: 22),
+        ],
         DimBars(data),
       ],
+    );
+  }
+}
+
+class _Highlight extends StatelessWidget {
+  final String title;
+  final Dim dim;
+  final double value;
+  const _Highlight({required this.title, required this.dim, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final z = Zone.of(value);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: z.color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: z.color.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title.toUpperCase(), style: T.cap.copyWith(fontSize: 10, letterSpacing: 1.2)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              DimBadge(dim, size: 28),
+              const SizedBox(width: 8),
+              Expanded(child: Text(dim.label, style: T.strong.copyWith(fontSize: 14.5))),
+              ZoneIcon(z, size: 20),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(z.advice, style: T.small.copyWith(color: z.color, fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 }
@@ -360,6 +369,8 @@ class _MyPlannerToday extends StatelessWidget {
                             DimBadge(d, size: 30),
                             const SizedBox(height: 8),
                             AnimatedPercent(value: ok.data!.of(d.key), style: T.pct.copyWith(fontSize: 14)),
+                            const SizedBox(height: 2),
+                            ZoneIcon(Zone.of(ok.data!.of(d.key)), size: 18),
                           ],
                         ),
                       ),

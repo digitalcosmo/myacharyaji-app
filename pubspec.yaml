@@ -26,6 +26,7 @@ dependencies:
 
   # Utils
   url_launcher: ^6.2.2
+  smart_auth: ^4.0.0
 
 dev_dependencies:
   flutter_test:

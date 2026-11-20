@@ -1,9 +1,11 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_repository.dart';
 import '../core/utils/dates.dart';
 import '../models/load_result.dart';
+import '../ui/tabler_icons.dart';
 
 class Rashi {
   /// Exact value GenralPredction expects (from the original app).
@@ -12,27 +14,29 @@ class Rashi {
   /// Name shown in the app.
   final String name;
   final String english;
-  final String symbol;
-  const Rashi(this.apiName, this.name, this.english, this.symbol);
+
+  /// Line icon of the sign (not an emoji).
+  final String icon;
+  const Rashi(this.apiName, this.name, this.english, this.icon);
 }
 
 const List<Rashi> kRashis = [
-  Rashi('Mesh', 'Mesha', 'Aries', '♈'),
-  Rashi('Vrishbha', 'Vrishabha', 'Taurus', '♉'),
-  Rashi('Mithun', 'Mithuna', 'Gemini', '♊'),
-  Rashi('Kark', 'Karka', 'Cancer', '♋'),
-  Rashi('Simha', 'Simha', 'Leo', '♌'),
-  Rashi('Kanya', 'Kanya', 'Virgo', '♍'),
-  Rashi('Tula', 'Tula', 'Libra', '♎'),
-  Rashi('Vrishchik', 'Vrishchika', 'Scorpio', '♏'),
-  Rashi('Dhanu', 'Dhanu', 'Sagittarius', '♐'),
-  Rashi('Makar', 'Makara', 'Capricorn', '♑'),
-  Rashi('Kumbh', 'Kumbha', 'Aquarius', '♒'),
-  Rashi('Meen', 'Meena', 'Pisces', '♓'),
+  Rashi('Mesh', 'Mesha', 'Aries', TablerIcons.zodiacAries),
+  Rashi('Vrishbha', 'Vrishabha', 'Taurus', TablerIcons.zodiacTaurus),
+  Rashi('Mithun', 'Mithuna', 'Gemini', TablerIcons.zodiacGemini),
+  Rashi('Kark', 'Karka', 'Cancer', TablerIcons.zodiacCancer),
+  Rashi('Simha', 'Simha', 'Leo', TablerIcons.zodiacLeo),
+  Rashi('Kanya', 'Kanya', 'Virgo', TablerIcons.zodiacVirgo),
+  Rashi('Tula', 'Tula', 'Libra', TablerIcons.zodiacLibra),
+  Rashi('Vrishchik', 'Vrishchika', 'Scorpio', TablerIcons.zodiacScorpio),
+  Rashi('Dhanu', 'Dhanu', 'Sagittarius', TablerIcons.zodiacSagittarius),
+  Rashi('Makar', 'Makara', 'Capricorn', TablerIcons.zodiacCapricorn),
+  Rashi('Kumbh', 'Kumbha', 'Aquarius', TablerIcons.zodiacAquarius),
+  Rashi('Meen', 'Meena', 'Pisces', TablerIcons.zodiacPisces),
 ];
 
 /// General (rashi) 5D prediction for yesterday, today and tomorrow.
-class RashiController extends GetxController {
+class RashiController extends GetxController with WidgetsBindingObserver {
   final ApiRepository _repo = ApiRepository();
   static const _prefKey = 'selectedRashi';
 
@@ -54,7 +58,21 @@ class RashiController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _restore();
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  /// The app may sit in the background past midnight; "today" then moves on,
+  /// so load the new day's readings when the app comes back.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadAllDays();
   }
 
   Future<void> _restore() async {

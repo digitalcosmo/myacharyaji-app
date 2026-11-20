@@ -24,6 +24,15 @@ class PlannerController extends GetxController {
   final week = mondayOf(today()).obs;
   final month = DateTime(today().year, today().month, 1).obs;
 
+  /// Which dimension the day-by-day charts and the month calendar show.
+  final dim = 'career'.obs;
+
+  /// Direction of the last move (-1 back, 1 forward) so cards slide the
+  /// right way when the day/week/month changes.
+  int navDir = 1;
+
+  String? _rid;
+
   /// key → result. Keys: "rid|d|2026-11-20", "rid|w|2026-11-16", "rid|m|2026-11".
   final results = <String, FiveDResult>{}.obs;
 
@@ -43,6 +52,12 @@ class PlannerController extends GetxController {
   void _resetToReport() {
     final r = report;
     if (r == null) return;
+    // Re-selecting the same report (e.g. pull-to-refresh) keeps the date.
+    if (r.rId == _rid) {
+      refreshVisible();
+      return;
+    }
+    _rid = r.rId;
     final d = r.defaultDay;
     day.value = d;
     week.value = mondayOf(d);
@@ -170,6 +185,32 @@ class PlannerController extends GetxController {
   }
 
   // ───────── navigation ─────────
+  /// Swipe on a 5D card: previous / next day, week or month.
+  void swipe(int n) {
+    switch (period.value) {
+      case PlannerPeriod.daily:
+        shiftDay(n);
+        break;
+      case PlannerPeriod.weekly:
+        shiftWeek(n);
+        break;
+      case PlannerPeriod.monthly:
+        shiftMonth(n);
+        break;
+    }
+  }
+
+  bool canSwipe(int n) {
+    switch (period.value) {
+      case PlannerPeriod.daily:
+        return canShiftDay(n);
+      case PlannerPeriod.weekly:
+        return canShiftWeek(n);
+      case PlannerPeriod.monthly:
+        return canShiftMonth(n);
+    }
+  }
+
   void setPeriod(PlannerPeriod p) {
     if (period.value == p) return;
     period.value = p;
@@ -182,6 +223,7 @@ class PlannerController extends GetxController {
   void selectDay(DateTime d) {
     final r = report;
     if (r == null || !r.contains(d)) return;
+    navDir = d.isBefore(day.value) ? -1 : 1;
     day.value = dateOnly(d);
     refreshVisible();
   }
@@ -193,6 +235,7 @@ class PlannerController extends GetxController {
   }
 
   void selectWeek(DateTime monday) {
+    navDir = monday.isBefore(week.value) ? -1 : 1;
     week.value = mondayOf(monday);
     final r = report;
     // Keep the day inside the chosen week (and inside the report).
@@ -205,6 +248,7 @@ class PlannerController extends GetxController {
   }
 
   void selectMonth(DateTime m) {
+    navDir = m.isBefore(month.value) ? -1 : 1;
     month.value = DateTime(m.year, m.month, 1);
     final r = report;
     if (r != null) {
@@ -258,6 +302,7 @@ class PlannerController extends GetxController {
   void goToday() {
     final r = report;
     if (r == null || !r.coversToday) return;
+    navDir = today().isBefore(day.value) ? -1 : 1;
     day.value = today();
     week.value = mondayOf(today());
     month.value = DateTime(today().year, today().month, 1);

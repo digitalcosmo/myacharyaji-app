@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
+import '../models/zone.dart';
 import 'motion.dart';
 import 'tokens.dart';
 
@@ -20,18 +21,17 @@ class ColumnItem {
   });
 }
 
-/// Vertical bar graph (prototype `.week .b`): columns rise from the baseline
-/// with a staggered ease, glide to new values, and can be tapped.
+/// Vertical bar graph: each column is coloured by the zone its value falls
+/// in (as in the CK reports), rises from the baseline with a staggered ease,
+/// glides to new values, and can be tapped.
 class ColumnChart extends StatelessWidget {
   final List<ColumnItem> items;
-  final Color color;
   final double height;
   final ValueChanged<int>? onTap;
 
   const ColumnChart({
     super.key,
     required this.items,
-    required this.color,
     this.height = 132,
     this.onTap,
   });
@@ -48,7 +48,7 @@ class ColumnChart extends StatelessWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: items[i].enabled && onTap != null ? () => onTap!(i) : null,
-                child: _Column(item: items[i], color: color, height: height, index: i),
+                child: _Column(item: items[i], height: height, index: i),
               ),
             ),
         ],
@@ -59,10 +59,9 @@ class ColumnChart extends StatelessWidget {
 
 class _Column extends StatefulWidget {
   final ColumnItem item;
-  final Color color;
   final double height;
   final int index;
-  const _Column({required this.item, required this.color, required this.height, required this.index});
+  const _Column({required this.item, required this.height, required this.index});
 
   @override
   State<_Column> createState() => _ColumnState();
@@ -86,15 +85,22 @@ class _ColumnState extends State<_Column> {
     final frac = (_started && v != null) ? (v / 100).clamp(0.04, 1.0) : 0.0;
     final sel = it.selected;
     final dim = !it.enabled;
+    final zone = v == null ? null : Zone.of(v);
+    final c0 = zone?.gradient.last ?? Colors.white;
+    final c1 = zone?.gradient.first ?? Colors.white;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         AnimatedOpacity(
-          opacity: (sel && v != null) ? 1 : 0,
+          opacity: v != null ? 1 : 0,
           duration: const Duration(milliseconds: 250),
-          child: Text(v == null ? '' : '${v.round()}%',
-              style: T.small.copyWith(color: AppColors.tx, fontWeight: FontWeight.w700)),
+          child: Text(v == null ? '' : '${v.round()}',
+              style: T.small.copyWith(
+                fontSize: 11.5,
+                color: sel ? AppColors.tx : AppColors.tx3,
+                fontWeight: sel ? FontWeight.w800 : FontWeight.w600,
+              )),
         ),
         const SizedBox(height: 6),
         SizedBox(
@@ -124,15 +130,11 @@ class _ColumnState extends State<_Column> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: sel
-                          ? [Color.lerp(widget.color, Colors.white, 0.35)!, widget.color]
-                          : [
-                              widget.color.withValues(alpha: 0.85),
-                              widget.color.withValues(alpha: 0.22),
-                            ],
+                          ? [c0, c1]
+                          : [c0.withValues(alpha: 0.85), c1.withValues(alpha: 0.25)],
                     ),
-                    boxShadow: sel
-                        ? [BoxShadow(color: widget.color.withValues(alpha: 0.45), blurRadius: 14)]
-                        : null,
+                    border: sel ? Border.all(color: Colors.white, width: 1.5) : null,
+                    boxShadow: sel ? [BoxShadow(color: c0.withValues(alpha: 0.5), blurRadius: 14)] : null,
                   ),
                 ),
               ),

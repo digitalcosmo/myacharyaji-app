@@ -76,9 +76,13 @@ class AcharyaCodeScreen extends StatelessWidget {
                     border: Border.all(color: AppColors.line),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 18),
+                  alignment: Alignment.centerLeft,
                   child: TextField(
                     controller: c.acharyaCodeController,
                     textCapitalization: TextCapitalization.characters,
+                    textAlignVertical: TextAlignVertical.center,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => c.validateAcharyaCode(),
                     style: GoogleFonts.spaceGrotesk(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.tx, letterSpacing: 3),
                     decoration: InputDecoration(
                       hintText: 'e.g. ACH001',
@@ -87,7 +91,7 @@ class AcharyaCodeScreen extends StatelessWidget {
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
-                      isDense: true,
+                      isCollapsed: true,
                       filled: false,
                     ),
                   ),

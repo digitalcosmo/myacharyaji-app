@@ -146,7 +146,7 @@ class ReportTile extends StatelessWidget {
             ),
             if (showProgress && live) ...[
               const SizedBox(height: 14),
-              AnimatedBar(value: report.progress * 100, color: AppColors.sun, height: 6),
+              AnimatedBar(value: report.progress * 100, colors: const [AppColors.sun2, AppColors.sun], height: 6),
               const SizedBox(height: 6),
               Text(
                 '${(report.progress * 100).round()}% through · ends ${fmtDayShort(report.end)}',

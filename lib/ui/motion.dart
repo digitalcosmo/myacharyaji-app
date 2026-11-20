@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// cubic-bezier(.22,1,.36,1) — the prototype's single easing curve.
 const Curve kEase = Cubic(.22, 1, .36, 1);
@@ -107,13 +108,110 @@ class _PopInState extends State<PopIn> with SingleTickerProviderStateMixin {
 }
 
 /// Wraps each child in [FadeSlideIn] with a growing delay.
-List<Widget> staggered(List<Widget> children, {int stepMs = 70, int startMs = 0}) => [
-      for (var i = 0; i < children.length; i++)
+/// [gap] puts even vertical spacing between the children.
+List<Widget> staggered(List<Widget> children, {int stepMs = 70, int startMs = 0, double gap = 0}) => [
+      for (var i = 0; i < children.length; i++) ...[
+        if (i > 0 && gap > 0) SizedBox(height: gap),
         FadeSlideIn(
           delay: Duration(milliseconds: startMs + i * stepMs),
           child: children[i],
         ),
+      ],
     ];
+
+/// Lets a card be dragged sideways: it follows the finger with resistance,
+/// and a long or fast enough swipe calls [onSwipe] (-1 = previous,
+/// 1 = next). Directions that aren't allowed rubber-band back.
+class SwipeArea extends StatefulWidget {
+  final Widget child;
+  final ValueChanged<int> onSwipe;
+  final bool Function(int dir) canSwipe;
+  const SwipeArea({super.key, required this.child, required this.onSwipe, required this.canSwipe});
+
+  @override
+  State<SwipeArea> createState() => _SwipeAreaState();
+}
+
+class _SwipeAreaState extends State<SwipeArea> with SingleTickerProviderStateMixin {
+  double _dx = 0;
+  late final AnimationController _back =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 320))
+        ..addListener(() => setState(() => _dx = _from * (1 - kEase.transform(_back.value))));
+  double _from = 0;
+
+  @override
+  void dispose() {
+    _back.dispose();
+    super.dispose();
+  }
+
+  void _release(double velocity) {
+    final dir = (_dx < -70 || velocity < -500)
+        ? 1
+        : (_dx > 70 || velocity > 500)
+            ? -1
+            : 0;
+    if (dir != 0 && widget.canSwipe(dir)) {
+      HapticFeedback.selectionClick();
+      widget.onSwipe(dir);
+    }
+    _from = _dx;
+    _back.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: (_) => _back.stop(),
+      onHorizontalDragUpdate: (d) {
+        final dir = d.delta.dx < 0 ? 1 : -1;
+        // Full movement where a swipe is possible, heavy resistance where not.
+        final k = widget.canSwipe(dir) ? 0.55 : 0.15;
+        setState(() => _dx = (_dx + d.delta.dx * k).clamp(-120.0, 120.0));
+      },
+      onHorizontalDragEnd: (d) => _release(d.primaryVelocity ?? 0),
+      onHorizontalDragCancel: () => _release(0),
+      child: Transform.translate(
+        offset: Offset(_dx, 0),
+        child: Opacity(opacity: (1 - _dx.abs() / 400).clamp(0.6, 1.0), child: widget.child),
+      ),
+    );
+  }
+}
+
+/// Swaps [child] with a horizontal slide in the direction of travel.
+class DirectionalSwitcher extends StatelessWidget {
+  final Widget child;
+  final Object switchKey;
+  final int direction; // 1 = forward (new content enters from the right)
+  const DirectionalSwitcher({super.key, required this.child, required this.switchKey, required this.direction});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 380),
+      switchInCurve: kEase,
+      switchOutCurve: Curves.easeIn,
+      layoutBuilder: (cur, prev) => Stack(
+        alignment: Alignment.topCenter,
+        children: [...prev, if (cur != null) cur],
+      ),
+      transitionBuilder: (c, a) {
+        final incoming = c.key == ValueKey(switchKey);
+        final dx = incoming ? 0.25 * direction : -0.25 * direction;
+        return FadeTransition(
+          opacity: a,
+          child: SlideTransition(
+            position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(a),
+            child: c,
+          ),
+        );
+      },
+      child: KeyedSubtree(key: ValueKey(switchKey), child: child),
+    );
+  }
+}
 
 /// Scales down slightly while pressed — every tappable card uses this.
 class Pressable extends StatefulWidget {

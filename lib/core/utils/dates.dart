@@ -42,4 +42,4 @@ String fmtWeekRange(DateTime monday) {
   return '${DateFormat('d MMM').format(monday)} – ${DateFormat('d MMM').format(sun)}';
 }
 
-const kWeekdayInitials = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const kWeekdayShort = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];

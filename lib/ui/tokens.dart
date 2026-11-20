@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/theme/app_colors.dart';
-import '../models/five_d.dart';
 
 /// Type scale from the prototype (Space Grotesk headings, Inter body).
 class T {
@@ -26,25 +25,3 @@ class T {
 
 const double kRadius = 22;
 const EdgeInsets kPagePad = EdgeInsets.fromLTRB(20, 0, 20, 0);
-
-Color toneColor(Tone t) {
-  switch (t) {
-    case Tone.smooth:
-      return AppColors.teal;
-    case Tone.mixed:
-      return AppColors.sun;
-    case Tone.careful:
-      return AppColors.rose;
-  }
-}
-
-String toneLabel(Tone t) {
-  switch (t) {
-    case Tone.smooth:
-      return 'Smooth';
-    case Tone.mixed:
-      return 'Mixed';
-    case Tone.careful:
-      return 'Careful';
-  }
-}
