@@ -186,7 +186,7 @@ class HomeTab extends StatelessWidget {
                   else
                     ...pred.dimensions.map((d) => _DimBarRow(
                           label: d['label'],
-                          key: d['key'],
+                          dimKey: d['key'],
                           score: d['score'],
                           color: AppColors.dimensionColor[d['key']] ??
                               AppColors.sun,
@@ -300,12 +300,12 @@ class _GlassCard extends StatelessWidget {
 /// Dimension bar row matching prototype's .bar-row
 class _DimBarRow extends StatelessWidget {
   final String label;
-  final String key;
+  final String dimKey;
   final int score;
   final Color color;
   const _DimBarRow(
       {required this.label,
-      required this.key,
+      required this.dimKey,
       required this.score,
       required this.color});
 
@@ -332,7 +332,7 @@ class _DimBarRow extends StatelessWidget {
               color: color.withValues(alpha: 0.15),
             ),
             child: Icon(
-              _dimIcons[key] ?? Icons.star_outline,
+              _dimIcons[dimKey] ?? Icons.star_outline,
               size: 15,
               color: color,
             ),
