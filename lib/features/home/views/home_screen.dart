@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -260,9 +261,42 @@ class _IconPainter extends CustomPainter {
   bool shouldRepaint(covariant _IconPainter old) => old.color != color;
 }
 
-/// Cosmic background with gradient auras
-class _CosmicBackground extends StatelessWidget {
+/// Cosmic background with animated starfield + gradient auras
+class _CosmicBackground extends StatefulWidget {
   const _CosmicBackground();
+
+  @override
+  State<_CosmicBackground> createState() => _CosmicBackgroundState();
+}
+
+class _CosmicBackgroundState extends State<_CosmicBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final List<_Star> _stars;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 60),
+    )..repeat();
+    // Generate 80 random stars
+    final rng = math.Random(42);
+    _stars = List.generate(80, (_) => _Star(
+      x: rng.nextDouble(),
+      y: rng.nextDouble(),
+      r: 0.5 + rng.nextDouble() * 1.5,
+      speed: 0.002 + rng.nextDouble() * 0.006,
+      opacity: 0.3 + rng.nextDouble() * 0.7,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -275,6 +309,16 @@ class _CosmicBackground extends StatelessWidget {
               center: Alignment(-0.6, -0.8),
               radius: 1.2,
               colors: [Color(0xFF1A1548), Color(0x00050610)],
+            ),
+          ),
+        ),
+        // Animated starfield
+        RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _ctrl,
+            builder: (_, __) => CustomPaint(
+              painter: _StarfieldPainter(_stars, _ctrl.value),
+              size: Size.infinite,
             ),
           ),
         ),
@@ -317,4 +361,40 @@ class _CosmicBackground extends StatelessWidget {
       ],
     );
   }
+}
+
+class _Star {
+  final double x, y, r, speed, opacity;
+  const _Star({
+    required this.x,
+    required this.y,
+    required this.r,
+    required this.speed,
+    required this.opacity,
+  });
+}
+
+class _StarfieldPainter extends CustomPainter {
+  final List<_Star> stars;
+  final double t;
+  _StarfieldPainter(this.stars, this.t);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final s in stars) {
+      final dx = (s.x + s.speed * t * 60) % 1.0;
+      // Gentle twinkle
+      final twinkle = 0.5 + 0.5 * math.sin(t * math.pi * 2 * 3 + s.x * 100);
+      final paint = Paint()
+        ..color = Colors.white.withValues(alpha: s.opacity * twinkle * 0.8);
+      canvas.drawCircle(
+        Offset(dx * size.width, s.y * size.height),
+        s.r,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StarfieldPainter old) => true;
 }
